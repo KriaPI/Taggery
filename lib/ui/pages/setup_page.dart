@@ -1,6 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:taggery/ui/components/directory_path_selector.dart';
+import 'package:taggery/ui/components/setup_dialog.dart';
 
 class SetupPage extends StatelessWidget {
   const SetupPage({super.key});
@@ -9,7 +9,7 @@ class SetupPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(body: 
       Center(
-        child: RootDirectoryPathSelector(
+        child: SetupDialog(
           buttonLabel: "Set root folder",
           buttonCallback: () {
             // TODO: implement logic to persist a folder path, and actually set it.

@@ -5,8 +5,8 @@ import 'package:taggery/ui/components/text_variants.dart';
 
 // TODO: provide documentation
 
-class RootDirectoryPathSelector extends StatefulWidget {
-  const RootDirectoryPathSelector({
+class SetupDialog extends StatefulWidget {
+  const SetupDialog({
     super.key,
     required this.buttonLabel,
     required this.buttonCallback,
@@ -16,10 +16,10 @@ class RootDirectoryPathSelector extends StatefulWidget {
   final VoidCallback buttonCallback;
 
   @override
-  State<StatefulWidget> createState() => RootDirectoryPathSelectorState();
+  State<StatefulWidget> createState() => SetupDialogState();
 }
 
-class RootDirectoryPathSelectorState extends State<RootDirectoryPathSelector> {
+class SetupDialogState extends State<SetupDialog> {
   String _rootpath = "";
 
   void requestRootDirectory() {
