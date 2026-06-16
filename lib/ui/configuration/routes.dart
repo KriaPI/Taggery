@@ -6,9 +6,9 @@ import 'package:taggery/ui/pages/viewer_page.dart';
 
 final appRoutes = GoRouter(
   routes: [
-    GoRoute(path: "/", builder: (context, state) => SetupPage()),
-    GoRoute(path: "/home", builder: (context, state) => HomePage()),
-    GoRoute(path: "/home", builder: (context, state) => ResultsPage()),
-    GoRoute(path: "/home", builder: (context, state) => ViewerPage()),
+    GoRoute(path: "/", builder: (context, state) => HomePage()),
+    GoRoute(path: "/setup", builder: (context, state) => SetupPage()),
+    GoRoute(path: "/results", builder: (context, state) => ResultsPage()),
+    GoRoute(path: "/viewer", builder: (context, state) => ViewerPage()),
   ],
 );
