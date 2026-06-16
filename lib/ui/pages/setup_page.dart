@@ -9,7 +9,7 @@ class SetupPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(body: 
       Center(
-        child: DirectoryPathSelector(
+        child: RootDirectoryPathSelector(
           buttonLabel: "Set root folder",
           buttonCallback: () {
             // TODO: implement logic to persist a folder path, and actually set it.
