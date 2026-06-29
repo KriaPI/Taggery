@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:taggery/ui/components/media_grid.dart';
 import 'package:taggery/ui/components/media_viewer.dart';
 
-
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -16,7 +15,7 @@ class HomePage extends StatelessWidget {
             child: Row(
               children: [
                 const AppPageNavigator(),
-                Expanded(child: const ContentArea())
+                Expanded(child: const ContentArea()),
               ],
             ),
           ),
@@ -25,6 +24,8 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+
+enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 
 /// A widget composed of two child widgets, a grid of photo tiles and a media "viewer", arranged in a row. The state of the two
 /// child widgets are dependent on each other and handled by this widget.
@@ -36,43 +37,76 @@ class ContentArea extends StatefulWidget {
 }
 
 class _ContentAreaState extends State<ContentArea> {
-  bool _isViewerOpen = false;
+  ContentAreaViewMode _viewMode = .gridExpanded;
   int _openedMediaIndex = 0;
-  
+
   void closeViewer() {
     setState(() {
-      _isViewerOpen = false;
+      _viewMode = .gridExpanded;
     });
+  }
+
+  void toggleExpandedView() {
+    if (_viewMode == .splitView) {
+      setState(() {
+        _viewMode = .viewerExpanded;
+      });
+    } else if (_viewMode == .viewerExpanded) {
+      setState(() {
+        _viewMode = .splitView;
+      });
+    } else {
+      // This should never happen!
+      assert(false);
+    }
   }
 
   void openMedia(int index) {
     setState(() {
       _openedMediaIndex = index;
-      _isViewerOpen = true;
+      _viewMode = .splitView;
     });
   }
 
   // TODO: do bounds checking.
   void previousMedia() {
     setState(() {
-      _openedMediaIndex = --_openedMediaIndex;  
+      _openedMediaIndex = --_openedMediaIndex;
     });
   }
 
   void nextMedia() {
     setState(() {
-      _openedMediaIndex = ++_openedMediaIndex;  
+      _openedMediaIndex = ++_openedMediaIndex;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return  Row(
-      children: [
-        Expanded(child: MediaGrid(selectionCallback: openMedia)),
-        if (_isViewerOpen) Expanded(child: MediaViewer(onClose: closeViewer, onPrevious: previousMedia, onNext: nextMedia)),
-      ],
-    );
+    return switch (_viewMode) {
+      .gridExpanded => MediaGrid(selectionCallback: openMedia),
+      .splitView => Row(
+        children: [
+          Expanded(child: MediaGrid(selectionCallback: openMedia)),
+          Expanded(
+            child: MediaViewer(
+              onClose: closeViewer,
+              onPrevious: previousMedia,
+              onNext: nextMedia,
+              onExpandOrMinimize: toggleExpandedView,
+              isExpanded: _viewMode == .viewerExpanded
+            ),
+          ),
+        ],
+      ),
+      .viewerExpanded => MediaViewer(
+        onClose: closeViewer,
+        onPrevious: previousMedia,
+        onNext: nextMedia,
+        onExpandOrMinimize: toggleExpandedView,
+        isExpanded: _viewMode == .viewerExpanded,
+      ),
+    };
   }
 }
 

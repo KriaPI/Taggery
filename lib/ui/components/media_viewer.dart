@@ -1,35 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:taggery/ui/components/containers.dart';
-import 'package:taggery/ui/components/more_menu.dart';
-
-// The options list shown to the user when they press the more actions button (icon button with three vertical dots).
-final List<MenuOption> moreMenuOptions = [
-  MenuOption(
-    label: "View Monochromatic",
-    leadingIcon: Icon(Icons.filter_b_and_w_rounded),
-    optionCallback: () => print("Monochromatic!"),
-    shortcut: SingleActivator(LogicalKeyboardKey.keyB, control: true),
-  ),
-  MenuOption(
-    label: "View Fullscreen",
-    leadingIcon: Icon(Icons.fullscreen),
-    optionCallback: () => print("Yep, it's in fullscreen."),
-    shortcut: SingleActivator(LogicalKeyboardKey.f11),
-  ),
-];
+import 'package:taggery/ui/components/more_button.dart';
 
 /// The media viewer for the home page. This is not a reusuable component.
 class MediaViewer extends StatelessWidget {
   const MediaViewer({
     super.key,
     required this.onClose,
+    required this.onExpandOrMinimize,
     required this.onPrevious,
     required this.onNext,
+    required this.isExpanded,
   });
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
+  final VoidCallback onExpandOrMinimize;
+  final bool isExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +30,37 @@ class MediaViewer extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 BackButton(onPressed: onClose),
-                MoreMenu(options: moreMenuOptions),
+                Row(
+                  children: [
+                    MoreButton(
+                      options: [
+                        MenuOption(
+                          label: "Show Detailed Information",
+                          optionCallback: () => print("Monochromatic!"),
+                        ),
+                        MenuOption(
+                          label: "View in Black and White",
+                          optionCallback: () => print("Monochromatic!"),
+                          shortcut: SingleActivator(
+                            LogicalKeyboardKey.keyA,
+                            control: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                    isExpanded
+                        ? IconButton(
+                            onPressed: onExpandOrMinimize,
+                            icon: Icon(Icons.close_fullscreen_rounded),
+                            tooltip: "Minimize Viewer",
+                          )
+                        : IconButton(
+                            onPressed: onExpandOrMinimize,
+                            icon: Icon(Icons.open_in_full_rounded),
+                            tooltip: "Maximize Viewer",
+                          ),
+                  ],
+                ),
               ],
             ),
           ),

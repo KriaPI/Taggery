@@ -11,15 +11,15 @@ class MenuOption {
 }
 
 /// A button that opens a drop-down menu without submenus.
-class MoreMenu extends StatefulWidget {
-  const MoreMenu({super.key, required this.options});
+class MoreButton extends StatefulWidget {
+  const MoreButton({super.key, required this.options});
   final List<MenuOption> options;
 
   @override
-  State<StatefulWidget> createState() => _MoreMenuState();
+  State<StatefulWidget> createState() => _MoreButtonState();
 }
 
-class _MoreMenuState extends State<MoreMenu> {
+class _MoreButtonState extends State<MoreButton> {
   final FocusNode _menuButtonFocusNode = FocusNode(
     debugLabel: "More Menu Button",
   );
