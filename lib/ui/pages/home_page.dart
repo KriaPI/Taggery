@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:taggery/ui/components/containers.dart';
-import 'package:taggery/ui/components/media_tile.dart';
+import 'package:taggery/ui/components/media_grid.dart';
+import 'package:taggery/ui/components/media_viewer.dart';
 
-// TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that should be displayed at most when the app is in fullscreen and does not have the viewer open).
-const int arbitraryMinimumCellSize = 300;
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -18,14 +16,66 @@ class HomePage extends StatelessWidget {
             child: Row(
               children: [
                 const AppPageNavigator(),
-                const Expanded(child: MediaGrid()),
-                const Expanded(child: MediaViewer()),
+                Expanded(child: const ContentArea())
               ],
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+/// A widget composed of two child widgets, a grid of photo tiles and a media "viewer", arranged in a row. The state of the two
+/// child widgets are dependent on each other and handled by this widget.
+class ContentArea extends StatefulWidget {
+  const ContentArea({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _ContentAreaState();
+}
+
+class _ContentAreaState extends State<ContentArea> {
+  bool isViewerOpen = false;
+  int openedMediaIndex = 0;
+  List<int> selectedMediaIndices = [];
+  
+  void closeViewer() {
+    setState(() {
+      isViewerOpen = false;
+    });
+  }
+
+  void openMedia(int index) {
+    setState(() {
+      openedMediaIndex = index;
+      isViewerOpen = true;
+    });
+  }
+
+  // TODO: do bounds checking.
+  void previousMedia() {
+    setState(() {
+      openedMediaIndex = --openedMediaIndex;  
+    });
+  }
+
+  void nextMedia() {
+    setState(() {
+      openedMediaIndex = ++openedMediaIndex;  
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return isViewerOpen 
+      ? Row(
+      children: [
+        Expanded(child: MediaGrid(selectionCallback: openMedia)),
+        Expanded(child: MediaViewer(onClose: closeViewer, onPrevious: previousMedia, onNext: nextMedia)),
+      ],
+    )
+    : MediaGrid(selectionCallback: openMedia);
   }
 }
 
@@ -39,7 +89,10 @@ class AppHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(onPressed: DoNothingAction.new, icon: Icon(Icons.menu_rounded)),
+          IconButton(
+            onPressed: DoNothingAction.new,
+            icon: Icon(Icons.menu_rounded),
+          ),
           SearchAnchor.bar(
             barHintText: "Search Library",
             barElevation: WidgetStatePropertyAll(0.0),
@@ -50,7 +103,10 @@ class AppHeader extends StatelessWidget {
               ];
             },
           ),
-          IconButton(onPressed: DoNothingAction.new, icon: Icon(Icons.check_box_outlined)),
+          IconButton(
+            onPressed: DoNothingAction.new,
+            icon: Icon(Icons.check_box_outlined),
+          ),
         ],
       ),
     );
@@ -59,92 +115,26 @@ class AppHeader extends StatelessWidget {
 
 class AppPageNavigator extends StatelessWidget {
   const AppPageNavigator({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return NavigationRail(
       labelType: .all,
       selectedIndex: 0,
       destinations: const [
-        NavigationRailDestination(icon: Icon(Icons.photo_library_rounded), label: Text("Library")),
-        NavigationRailDestination(icon: Icon(Icons.label_rounded), label: Text("Tags")),
-        NavigationRailDestination(icon: Icon(Icons.settings_rounded), label: Text("Settings"))
-      ], 
-    );
-  }
-} 
-
-class MediaGrid extends StatelessWidget {
-  const MediaGrid({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Pane(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return GridView.count(
-              crossAxisCount: (constraints.maxWidth / arbitraryMinimumCellSize)
-                  .round(),
-              children: List.generate(15, (index) {
-                return MediaTile.thumbnailUnavailable();
-              }).toList(),
-            );
-          },
+        NavigationRailDestination(
+          icon: Icon(Icons.photo_library_rounded),
+          label: Text("Library"),
         ),
-      ),
-    );
-  }
-}
-
-class MediaViewer extends StatelessWidget {
-  const MediaViewer({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Pane(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                BackButton(),
-                IconButton(
-                  onPressed: DoNothingAction.new,
-                  icon: Icon(Icons.more_vert_rounded),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Stack(
-              alignment: AlignmentGeometry.center,
-              children: [
-                MediaTile.thumbnailUnavailable(),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton.filledTonal(
-                        onPressed: DoNothingAction.new,
-                        icon: Icon(Icons.chevron_left_rounded),
-                      ),
-                      IconButton.filledTonal(
-                        onPressed: DoNothingAction.new,
-                        icon: Icon(Icons.chevron_right_rounded),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        NavigationRailDestination(
+          icon: Icon(Icons.label_rounded),
+          label: Text("Tags"),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.settings_rounded),
+          label: Text("Settings"),
+        ),
+      ],
     );
   }
 }
