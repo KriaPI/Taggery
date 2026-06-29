@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taggery/ui/configuration/default_keybindings.dart';
 import 'package:taggery/ui/configuration/routes.dart';
 
 void main() {
@@ -11,6 +12,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      shortcuts: keybindings,
       routerConfig: appRoutes,
       darkTheme: ThemeData.dark(),
       theme: ThemeData.light(),

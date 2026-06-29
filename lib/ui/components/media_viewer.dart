@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:taggery/ui/components/containers.dart';
+import 'package:taggery/ui/components/more_menu.dart';
 
+// The options list shown to the user when they press the more actions button (icon button with three vertical dots).
+final List<MenuOption> moreMenuOptions = [
+  MenuOption(
+    label: "View Monochromatic",
+    leadingIcon: Icon(Icons.filter_b_and_w_rounded),
+    optionCallback: () => print("Monochromatic!"),
+    shortcut: SingleActivator(LogicalKeyboardKey.keyB, control: true),
+  ),
+  MenuOption(
+    label: "View Fullscreen",
+    leadingIcon: Icon(Icons.fullscreen),
+    optionCallback: () => print("Yep, it's in fullscreen."),
+    shortcut: SingleActivator(LogicalKeyboardKey.f11),
+  ),
+];
+
+/// The media viewer for the home page. This is not a reusuable component.
 class MediaViewer extends StatelessWidget {
-  const MediaViewer({super.key, required this.onClose, required this.onPrevious, required this.onNext});
+  const MediaViewer({
+    super.key,
+    required this.onClose,
+    required this.onPrevious,
+    required this.onNext,
+  });
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
@@ -18,10 +42,7 @@ class MediaViewer extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 BackButton(onPressed: onClose),
-                IconButton(
-                  onPressed: DoNothingAction.new,
-                  icon: Icon(Icons.more_vert_rounded),
-                ),
+                MoreMenu(options: moreMenuOptions),
               ],
             ),
           ),

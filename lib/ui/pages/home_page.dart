@@ -36,46 +36,43 @@ class ContentArea extends StatefulWidget {
 }
 
 class _ContentAreaState extends State<ContentArea> {
-  bool isViewerOpen = false;
-  int openedMediaIndex = 0;
-  List<int> selectedMediaIndices = [];
+  bool _isViewerOpen = false;
+  int _openedMediaIndex = 0;
   
   void closeViewer() {
     setState(() {
-      isViewerOpen = false;
+      _isViewerOpen = false;
     });
   }
 
   void openMedia(int index) {
     setState(() {
-      openedMediaIndex = index;
-      isViewerOpen = true;
+      _openedMediaIndex = index;
+      _isViewerOpen = true;
     });
   }
 
   // TODO: do bounds checking.
   void previousMedia() {
     setState(() {
-      openedMediaIndex = --openedMediaIndex;  
+      _openedMediaIndex = --_openedMediaIndex;  
     });
   }
 
   void nextMedia() {
     setState(() {
-      openedMediaIndex = ++openedMediaIndex;  
+      _openedMediaIndex = ++_openedMediaIndex;  
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return isViewerOpen 
-      ? Row(
+    return  Row(
       children: [
         Expanded(child: MediaGrid(selectionCallback: openMedia)),
-        Expanded(child: MediaViewer(onClose: closeViewer, onPrevious: previousMedia, onNext: nextMedia)),
+        if (_isViewerOpen) Expanded(child: MediaViewer(onClose: closeViewer, onPrevious: previousMedia, onNext: nextMedia)),
       ],
-    )
-    : MediaGrid(selectionCallback: openMedia);
+    );
   }
 }
 
