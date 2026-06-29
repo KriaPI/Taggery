@@ -34,18 +34,25 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SearchAnchor.bar(
-          barElevation: WidgetStatePropertyAll(0.0),
-          suggestionsBuilder: (context, controller) {
-            return [
-              ListTile(title: Text("Placeholder 1")),
-              ListTile(title: Text("Placeholder 2")),
-            ];
-          },
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(onPressed: DoNothingAction.new, icon: Icon(Icons.menu_rounded)),
+          SearchAnchor.bar(
+            barHintText: "Search Library",
+            barElevation: WidgetStatePropertyAll(0.0),
+            suggestionsBuilder: (context, controller) {
+              return [
+                ListTile(title: Text("Placeholder 1")),
+                ListTile(title: Text("Placeholder 2")),
+              ];
+            },
+          ),
+          IconButton(onPressed: DoNothingAction.new, icon: Icon(Icons.check_box_outlined)),
+        ],
+      ),
     );
   }
 }
@@ -60,7 +67,7 @@ class AppPageNavigator extends StatelessWidget {
       selectedIndex: 0,
       destinations: const [
         NavigationRailDestination(icon: Icon(Icons.photo_library_rounded), label: Text("Library")),
-        NavigationRailDestination(icon: Icon(Icons.sell_rounded), label: Text("Tags")),
+        NavigationRailDestination(icon: Icon(Icons.label_rounded), label: Text("Tags")),
         NavigationRailDestination(icon: Icon(Icons.settings_rounded), label: Text("Settings"))
       ], 
     );
