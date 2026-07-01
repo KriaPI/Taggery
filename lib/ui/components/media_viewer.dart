@@ -1,26 +1,32 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/more_button.dart';
 
 /// The media viewer for the home page. This is not a reusuable component.
-class MediaViewer extends StatelessWidget {
+class MediaViewer extends ConsumerWidget {
   const MediaViewer({
     super.key,
+    required this.media,
     required this.onClose,
     required this.onExpandOrMinimize,
     required this.onPrevious,
     required this.onNext,
     required this.isExpanded,
   });
+  final File media;
+  final bool isExpanded;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
   final VoidCallback onExpandOrMinimize;
-  final bool isExpanded;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+
     return Pane(
       child: Column(
         children: [
@@ -29,14 +35,14 @@ class MediaViewer extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                BackButton(onPressed: onClose),
+                IconButton(icon: Icon(Icons.close_rounded), onPressed: onClose, tooltip: "Close"),
                 Row(
                   children: [
                     MoreButton(
                       options: [
                         MenuOption(
-                          label: "Show Detailed Information",
-                          optionCallback: () => print("Monochromatic!"),
+                          label: "Details",
+                          optionCallback: () => print("Details!"),
                         ),
                         MenuOption(
                           label: "View in Black and White",
@@ -52,12 +58,12 @@ class MediaViewer extends StatelessWidget {
                         ? IconButton(
                             onPressed: onExpandOrMinimize,
                             icon: Icon(Icons.close_fullscreen_rounded),
-                            tooltip: "Minimize Viewer",
+                            tooltip: "Minimize",
                           )
                         : IconButton(
                             onPressed: onExpandOrMinimize,
                             icon: Icon(Icons.open_in_full_rounded),
-                            tooltip: "Maximize Viewer",
+                            tooltip: "Maximize",
                           ),
                   ],
                 ),
@@ -68,8 +74,8 @@ class MediaViewer extends StatelessWidget {
             child: Stack(
               alignment: AlignmentGeometry.center,
               children: [
-                // TODO: replace with actual image
-                Icon(Icons.image),
+                // TODO: make it zoomable and pannable
+                Image.file(media),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(

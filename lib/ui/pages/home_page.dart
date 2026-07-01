@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:taggery/providers/gallery_provider.dart';
 import 'package:taggery/ui/components/media_grid.dart';
 import 'package:taggery/ui/components/media_viewer.dart';
 
@@ -29,14 +31,14 @@ enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 
 /// A widget composed of two child widgets, a grid of photo tiles and a media "viewer", arranged in a row. The state of the two
 /// child widgets are dependent on each other and handled by this widget.
-class ContentArea extends StatefulWidget {
+class ContentArea extends ConsumerStatefulWidget {
   const ContentArea({super.key});
 
   @override
-  State<StatefulWidget> createState() => _ContentAreaState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _ContentAreaState();
 }
 
-class _ContentAreaState extends State<ContentArea> {
+class _ContentAreaState extends ConsumerState<ContentArea> {
   ContentAreaViewMode _viewMode = .gridExpanded;
   int _openedMediaIndex = 0;
 
@@ -83,29 +85,28 @@ class _ContentAreaState extends State<ContentArea> {
 
   @override
   Widget build(BuildContext context) {
+    final gallery = ref.watch(galleryProvider);
+
+    final viewer = MediaViewer(
+              media: gallery[_openedMediaIndex].source,
+              isExpanded: _viewMode == .viewerExpanded,
+              onClose: closeViewer,
+              onPrevious: previousMedia,
+              onNext: nextMedia,
+              onExpandOrMinimize: toggleExpandedView
+    );
+
     return switch (_viewMode) {
       .gridExpanded => MediaGrid(selectionCallback: openMedia),
       .splitView => Row(
         children: [
           Expanded(child: MediaGrid(selectionCallback: openMedia)),
           Expanded(
-            child: MediaViewer(
-              onClose: closeViewer,
-              onPrevious: previousMedia,
-              onNext: nextMedia,
-              onExpandOrMinimize: toggleExpandedView,
-              isExpanded: _viewMode == .viewerExpanded
-            ),
+            child: viewer,
           ),
         ],
       ),
-      .viewerExpanded => MediaViewer(
-        onClose: closeViewer,
-        onPrevious: previousMedia,
-        onNext: nextMedia,
-        onExpandOrMinimize: toggleExpandedView,
-        isExpanded: _viewMode == .viewerExpanded,
-      ),
+      .viewerExpanded => viewer,
     };
   }
 }
