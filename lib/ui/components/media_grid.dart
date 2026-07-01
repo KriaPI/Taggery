@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/providers/gallery_provider.dart';
 import 'package:taggery/ui/components/containers.dart';
+import 'package:taggery/ui/components/text_variants.dart';
 
 // TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that should be displayed at most when the app is in fullscreen and does not have the viewer open).
 const int arbitraryMinimumCellSize = 300;
@@ -14,7 +15,17 @@ class MediaGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gallery = ref.watch(galleryProvider);
 
-    return Pane(
+    return gallery.when(
+      loading: () => Pane(child: BodyText("Loading Images...")),
+      error: (error, stackTrace) => Pane(child: Column(
+        crossAxisAlignment: .center,
+        children: [
+          TitleText("An error occurred while loading."),
+          BodyText("$error"),
+          BodyText("$stackTrace")
+        ],
+      )),
+      data: (data) => Pane(
       child: Padding(
         padding: const EdgeInsets.all(4.0),
         child: LayoutBuilder(
@@ -22,10 +33,10 @@ class MediaGrid extends ConsumerWidget {
             return GridView.count(
               crossAxisCount: (constraints.maxWidth / arbitraryMinimumCellSize)
                   .round(),
-              children: List.generate(gallery.length, (index) {
+              children: List.generate(data.length, (index) {
                 return ImageTile(
                   media: Image(
-                    image: ResizeImage(FileImage(gallery[index].source),
+                    image: ResizeImage(FileImage(data[index].source),
                       width: arbitraryMinimumCellSize
                     ),
                     fit: .contain,
@@ -38,7 +49,7 @@ class MediaGrid extends ConsumerWidget {
           },
         ),
       ),
-    );
+    ));
   }
 }
 

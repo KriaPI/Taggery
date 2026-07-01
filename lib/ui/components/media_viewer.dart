@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/more_button.dart';
+import 'package:taggery/ui/components/text_variants.dart';
 
 /// The media viewer for the home page. This is not a reusuable component.
 class MediaViewer extends ConsumerWidget {
@@ -17,7 +18,7 @@ class MediaViewer extends ConsumerWidget {
     required this.onNext,
     required this.isExpanded,
   });
-  final File media;
+  final File? media;
   final bool isExpanded;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -75,7 +76,9 @@ class MediaViewer extends ConsumerWidget {
               alignment: AlignmentGeometry.center,
               children: [
                 // TODO: make it zoomable and pannable
-                Image.file(media),
+                media != null 
+                  ? Image.file(media!)
+                  : BodyText("The Image could not be loaded."),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(

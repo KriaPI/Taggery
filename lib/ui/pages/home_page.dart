@@ -86,9 +86,9 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   @override
   Widget build(BuildContext context) {
     final gallery = ref.watch(galleryProvider);
-
+    
     final viewer = MediaViewer(
-              media: gallery[_openedMediaIndex].source,
+              media: gallery.when(data:(data) => data[_openedMediaIndex].source, error:(error, stackTrace) => null, loading:() => null),
               isExpanded: _viewMode == .viewerExpanded,
               onClose: closeViewer,
               onPrevious: previousMedia,
