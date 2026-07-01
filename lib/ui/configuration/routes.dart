@@ -4,7 +4,7 @@ import 'package:taggery/ui/pages/setup_page.dart';
 
 final appRoutes = GoRouter(
   routes: [
-    GoRoute(path: "/", builder: (context, state) => HomePage()),
-    GoRoute(path: "/setup", builder: (context, state) => SetupPage()),
+    GoRoute(path: "/home", builder: (context, state) => HomePage()),
+    GoRoute(path: "/", builder: (context, state) => SetupPage()),
   ],
 );

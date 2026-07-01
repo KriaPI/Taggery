@@ -1,6 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:taggery/providers/configuration_provider.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 
 class SetupPage extends StatelessWidget {
@@ -13,7 +15,6 @@ class SetupPage extends StatelessWidget {
         child: SetupDialog(
           buttonLabel: "Set root folder",
           buttonCallback: () {
-            // TODO: implement logic to persist a folder path, and actually set it.
             FilePicker.getDirectoryPath();
           },
         )
@@ -23,7 +24,7 @@ class SetupPage extends StatelessWidget {
 
 // TODO: provide documentation
 
-class SetupDialog extends StatefulWidget {
+class SetupDialog extends ConsumerStatefulWidget {
   const SetupDialog({
     super.key,
     required this.buttonLabel,
@@ -34,10 +35,10 @@ class SetupDialog extends StatefulWidget {
   final VoidCallback buttonCallback;
 
   @override
-  State<StatefulWidget> createState() => SetupDialogState();
+  ConsumerState<ConsumerStatefulWidget> createState() => SetupDialogState();
 }
 
-class SetupDialogState extends State<SetupDialog> {
+class SetupDialogState extends ConsumerState<SetupDialog> {
   String _rootpath = "";
 
   void requestRootDirectory() {
@@ -55,11 +56,14 @@ class SetupDialogState extends State<SetupDialog> {
   }
 
   void setRootDirectory() {
+    ref.read(configurationNotifierProvider.notifier).setGalleryRootDirectory(_rootpath);
     context.go("/home");
   }
 
   @override
   Widget build(BuildContext context) {
+    
+
     if (_rootpath == "") {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
