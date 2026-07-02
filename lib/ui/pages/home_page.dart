@@ -42,6 +42,35 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   ContentAreaViewMode _viewMode = .gridExpanded;
   int _openedMediaIndex = 0;
 
+  @override
+  Widget build(BuildContext context) {
+    final gallery = ref.watch(galleryProvider);
+
+    final viewer = MediaViewer(
+      media: gallery.when(
+        data: (data) => data.isNotEmpty ? data[_openedMediaIndex].source : null,
+        error: (error, stackTrace) => null,
+        loading: () => null,
+      ),
+      isExpanded: _viewMode == .viewerExpanded,
+      onClose: closeViewer,
+      onPrevious: previousMedia,
+      onNext: nextMedia,
+      onExpandOrMinimize: toggleExpandedView,
+    );
+
+    return switch (_viewMode) {
+      .gridExpanded => MediaGrid(selectionCallback: openMedia),
+      .splitView => Row(
+        children: [
+          Expanded(child: MediaGrid(selectionCallback: openMedia)),
+          Expanded(child: viewer),
+        ],
+      ),
+      .viewerExpanded => viewer,
+    };
+  }
+
   void closeViewer() {
     setState(() {
       _viewMode = .gridExpanded;
@@ -82,35 +111,9 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
       _openedMediaIndex = ++_openedMediaIndex;
     });
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final gallery = ref.watch(galleryProvider);
-    
-    final viewer = MediaViewer(
-              media: gallery.when(data:(data) => data[_openedMediaIndex].source, error:(error, stackTrace) => null, loading:() => null),
-              isExpanded: _viewMode == .viewerExpanded,
-              onClose: closeViewer,
-              onPrevious: previousMedia,
-              onNext: nextMedia,
-              onExpandOrMinimize: toggleExpandedView
-    );
-
-    return switch (_viewMode) {
-      .gridExpanded => MediaGrid(selectionCallback: openMedia),
-      .splitView => Row(
-        children: [
-          Expanded(child: MediaGrid(selectionCallback: openMedia)),
-          Expanded(
-            child: viewer,
-          ),
-        ],
-      ),
-      .viewerExpanded => viewer,
-    };
-  }
 }
 
+/// The header containing the gallery searchbar.
 class AppHeader extends StatelessWidget {
   const AppHeader({super.key});
 

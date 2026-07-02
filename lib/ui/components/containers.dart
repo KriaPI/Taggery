@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-// TODO: document
-
-// Pane is the container for other widgets with the lowest elevation. This means that it sits directly on
-// the background and should be used for larger collections of widgets.
+/// Pane is the container for other widgets with the lowest elevation. 
+/// 
+/// This means that it sits directly on the background and should be used for larger collections of widgets.
 class Pane extends StatelessWidget {
   const Pane({super.key, required this.child});
   final Widget child;

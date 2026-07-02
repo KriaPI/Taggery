@@ -14,7 +14,11 @@ Future<List<GalleryEntry>> loadGalleryFromFolder(String directoryPath) async {
   return gallery;
 }
 
+
 final galleryProvider = FutureProvider((ref) async {
-  final configuration = ref.watch(configurationNotifierProvider);
-  return await loadGalleryFromFolder(configuration.galleryRootPath);
+  final configuration = await ref.watch(configurationNotifierProvider.future);
+
+  return configuration.galleryRootPath != null
+      ? await loadGalleryFromFolder(configuration.galleryRootPath!)
+      : [];
 });
