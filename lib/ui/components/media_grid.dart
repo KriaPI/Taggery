@@ -14,6 +14,7 @@ class MediaGrid extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final gallery = ref.watch(galleryProvider);
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     return gallery.when(
       loading: () => Pane(child: BodyText("Loading Images...")),
@@ -37,9 +38,9 @@ class MediaGrid extends ConsumerWidget {
                 return ImageTile(
                   media: Image(
                     image: ResizeImage(FileImage(data[index].source),
-                      width: arbitraryMinimumCellSize
+                      width: (arbitraryMinimumCellSize * pixelRatio).round()
                     ),
-                    fit: .contain,
+                    fit: .cover,
                   ),
                   index: index,
                   onTap: selectionCallback,
@@ -76,6 +77,7 @@ class ImageTile extends StatelessWidget {
       child: Card(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: media,
+        clipBehavior: .antiAlias,
       ),
     );
   }

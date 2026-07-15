@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,8 +7,8 @@ import 'package:taggery/ui/components/more_button.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 
 /// The media viewer for the home page. This is not a reusuable component.
-class MediaViewer extends ConsumerWidget {
-  const MediaViewer({
+class ImageViewer extends ConsumerWidget {
+  const ImageViewer({
     super.key,
     required this.media,
     required this.onClose,
@@ -39,6 +38,17 @@ class MediaViewer extends ConsumerWidget {
                 IconButton(icon: Icon(Icons.close_rounded), onPressed: onClose, tooltip: "Close"),
                 Row(
                   children: [
+                    isExpanded
+                        ? IconButton(
+                            onPressed: onExpandOrMinimize,
+                            icon: Icon(Icons.close_fullscreen_rounded),
+                            tooltip: "Minimize",
+                          )
+                        : IconButton(
+                            onPressed: onExpandOrMinimize,
+                            icon: Icon(Icons.open_in_full_rounded),
+                            tooltip: "Maximize",
+                          ),
                     MoreButton(
                       options: [
                         MenuOption(
@@ -55,17 +65,7 @@ class MediaViewer extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    isExpanded
-                        ? IconButton(
-                            onPressed: onExpandOrMinimize,
-                            icon: Icon(Icons.close_fullscreen_rounded),
-                            tooltip: "Minimize",
-                          )
-                        : IconButton(
-                            onPressed: onExpandOrMinimize,
-                            icon: Icon(Icons.open_in_full_rounded),
-                            tooltip: "Maximize",
-                          ),
+                    
                   ],
                 ),
               ],

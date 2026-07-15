@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/providers/gallery_provider.dart';
 import 'package:taggery/ui/components/media_grid.dart';
-import 'package:taggery/ui/components/media_viewer.dart';
+import 'package:taggery/ui/components/image_viewer.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -46,7 +46,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   Widget build(BuildContext context) {
     final gallery = ref.watch(galleryProvider);
 
-    final viewer = MediaViewer(
+    final viewer = ImageViewer(
       media: gallery.when(
         data: (data) => data.isNotEmpty ? data[_openedMediaIndex].source : null,
         error: (error, stackTrace) => null,
