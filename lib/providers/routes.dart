@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taggery/providers/configuration_provider.dart';
-import 'package:taggery/ui/pages/home_page.dart';
+import 'package:taggery/ui/pages/home/home_page.dart';
 import 'package:taggery/ui/pages/setup_page.dart';
 
 final gorouterProvider = FutureProvider((ref) async {

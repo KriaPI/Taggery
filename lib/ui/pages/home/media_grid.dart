@@ -29,34 +29,32 @@ class MediaGrid extends ConsumerWidget {
           ],
         ),
       ),
-      data: (data) => Pane(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return GridView.count(
-              crossAxisCount: (constraints.maxWidth / arbitraryMinimumCellSize)
-                  .round(),
-              crossAxisSpacing: 8.0,
-              mainAxisSpacing: 16.0,
-              childAspectRatio: 0.9,
-              children: List.generate(data.length, (index) {
-                final GalleryEntry entry = data[index];
-                return ImageTile(
-                  media: Image(
-                    image: ResizeImage(
-                      FileImage(entry.source),
-                      width: (arbitraryMinimumCellSize * pixelRatio).round(),
-                      allowUpscaling: true,
-                    ),
-                    fit: .cover,
+      data: (data) => LayoutBuilder(
+        builder: (context, constraints) {
+          return GridView.count(
+            crossAxisCount: (constraints.maxWidth / arbitraryMinimumCellSize)
+                .round(),
+            crossAxisSpacing: 8.0,
+            mainAxisSpacing: 24.0,
+            childAspectRatio: 0.9,
+            children: List.generate(data.length, (index) {
+              final GalleryEntry entry = data[index];
+              return ImageTile(
+                media: Image(
+                  image: ResizeImage(
+                    FileImage(entry.source),
+                    width: (arbitraryMinimumCellSize * pixelRatio).round(),
+                    allowUpscaling: true,
                   ),
-                  index: index,
-                  onTap: selectionCallback,
-                  tags: entry.tags,
-                );
-              }).toList(),
-            );
-          },
-        ),
+                  fit: .cover,
+                ),
+                index: index,
+                onTap: selectionCallback,
+                tags: entry.tags,
+              );
+            }).toList(),
+          );
+        },
       ),
     );
   }
@@ -89,6 +87,7 @@ class ImageTile extends StatelessWidget {
       onTap: () => onTap(index),
       child: Column(
         crossAxisAlignment: .stretch,
+        spacing: 8.0,
         children: [
           AspectRatio(
             aspectRatio: 1,

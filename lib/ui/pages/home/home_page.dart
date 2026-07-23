@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/providers/gallery_provider.dart';
-import 'package:taggery/ui/components/media_grid.dart';
-import 'package:taggery/ui/components/image_viewer.dart';
+import 'package:taggery/ui/pages/home/content_filters.dart';
+import 'package:taggery/ui/pages/home/media_grid.dart';
+import 'package:taggery/ui/pages/home/image_viewer.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -17,12 +18,54 @@ class HomePage extends StatelessWidget {
             child: Row(
               children: [
                 const AppPageNavigator(),
-                Expanded(child: const ContentArea()),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: .circular(8.0),
+                      color: Theme.of(context).colorScheme.surfaceContainerLowest
+                    ),
+                    padding: EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 0.0),
+                    child: Column(
+                      spacing: 48.0,
+                      children: [
+                        const ContentFilters(),
+                        Expanded(child: const ContentArea()),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Navigation rail
+class AppPageNavigator extends StatelessWidget {
+  const AppPageNavigator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationRail(
+      labelType: .all,
+      selectedIndex: 0,
+      destinations: const [
+        NavigationRailDestination(
+          icon: Icon(Icons.photo_library_rounded),
+          label: Text("Library"),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.label_rounded),
+          label: Text("Tags"),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.settings_rounded),
+          label: Text("Settings"),
+        ),
+      ],
     );
   }
 }
@@ -144,32 +187,6 @@ class AppHeader extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class AppPageNavigator extends StatelessWidget {
-  const AppPageNavigator({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationRail(
-      labelType: .all,
-      selectedIndex: 0,
-      destinations: const [
-        NavigationRailDestination(
-          icon: Icon(Icons.photo_library_rounded),
-          label: Text("Library"),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.label_rounded),
-          label: Text("Tags"),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.settings_rounded),
-          label: Text("Settings"),
-        ),
-      ],
     );
   }
 }
