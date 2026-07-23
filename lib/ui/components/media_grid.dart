@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:taggery/model/gallery_entry.dart';
 import 'package:taggery/providers/gallery_provider.dart';
 import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/text_variants.dart';
@@ -18,39 +19,46 @@ class MediaGrid extends ConsumerWidget {
 
     return gallery.when(
       loading: () => Pane(child: BodyText("Loading Images...")),
-      error: (error, stackTrace) => Pane(child: Column(
-        crossAxisAlignment: .center,
-        children: [
-          TitleText("An error occurred while loading."),
-          BodyText("$error"),
-          BodyText("$stackTrace")
-        ],
-      )),
+      error: (error, stackTrace) => Pane(
+        child: Column(
+          crossAxisAlignment: .center,
+          children: [
+            TitleText("An error occurred while loading."),
+            BodyText("$error"),
+            BodyText("$stackTrace"),
+          ],
+        ),
+      ),
       data: (data) => Pane(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
         child: LayoutBuilder(
           builder: (context, constraints) {
             return GridView.count(
               crossAxisCount: (constraints.maxWidth / arbitraryMinimumCellSize)
                   .round(),
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 16.0,
+              childAspectRatio: 0.9,
               children: List.generate(data.length, (index) {
+                final GalleryEntry entry = data[index];
                 return ImageTile(
                   media: Image(
-                    image: ResizeImage(FileImage(data[index].source),
-                      width: (arbitraryMinimumCellSize * pixelRatio).round()
+                    image: ResizeImage(
+                      FileImage(entry.source),
+                      width: (arbitraryMinimumCellSize * pixelRatio).round(),
+                      allowUpscaling: true,
                     ),
                     fit: .cover,
                   ),
                   index: index,
                   onTap: selectionCallback,
+                  tags: entry.tags,
                 );
               }).toList(),
             );
           },
         ),
       ),
-    ));
+    );
   }
 }
 
@@ -60,24 +68,41 @@ class ImageTile extends StatelessWidget {
     required this.media,
     required this.index,
     required this.onTap,
+    this.tags = const [],
   });
+
   ImageTile.thumbnailUnavailable({
     super.key,
     required this.index,
     required this.onTap,
+    this.tags = const [],
   }) : media = Icon(Icons.image);
+
   final Widget media;
   final int index;
   final void Function(int index) onTap;
+  final List<String> tags;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => onTap(index),
-      child: Card(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        child: media,
-        clipBehavior: .antiAlias,
+      child: Column(
+        crossAxisAlignment: .stretch,
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: ClipRRect(
+              borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
+              clipBehavior: .antiAlias,
+              child: media,
+            ),
+          ),
+          Text(
+            tags.take(4).map((element) => "#$element ").join(),
+            overflow: .ellipsis,
+          ),
+        ],
       ),
     );
   }

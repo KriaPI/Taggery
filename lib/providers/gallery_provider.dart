@@ -8,7 +8,7 @@ Future<List<GalleryEntry>> loadGalleryFromFolder(String directoryPath) async {
 
   List<GalleryEntry> gallery = [];
   await for (final image in images) {
-    gallery.add(GalleryEntry(source: image));
+    gallery.add(GalleryEntry(source: image, tags: ["cat", "animal", "creature adsdsadadadmaldmalkdamdlamdlamdlamd"]));
   }
 
   return gallery;
