@@ -11,33 +11,23 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          AppHeader(),
-          Expanded(
-            child: Row(
-              children: [
-                const AppPageNavigator(),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: .circular(8.0),
-                      color: Theme.of(context).colorScheme.surfaceContainerLowest
-                    ),
-                    padding: EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 0.0),
-                    child: Column(
-                      spacing: 48.0,
-                      children: [
-                        const ContentFilters(),
-                        Expanded(child: const ContentArea()),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+      body: Padding(
+        padding: const EdgeInsets.only(top: 16.0, right: 32.0),
+        child: Row(
+          children: [
+            const AppPageNavigator(),
+            Expanded(
+              child: Column(
+                spacing: 8.0,
+                children: [
+                  const SearchBar(),
+
+                  Expanded(child: ContentArea()),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -50,6 +40,12 @@ class AppPageNavigator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NavigationRail(
+      leading: FloatingActionButton(
+        elevation: 0.0,
+        onPressed: () {},
+        tooltip: "Tag photos",
+        child: Icon(Icons.edit_rounded),
+      ),
       labelType: .all,
       selectedIndex: 0,
       destinations: const [
@@ -89,24 +85,48 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   Widget build(BuildContext context) {
     final gallery = ref.watch(galleryProvider);
 
-    final viewer = ImageViewer(
-      media: gallery.when(
-        data: (data) => data.isNotEmpty ? data[_openedMediaIndex].source : null,
-        error: (error, stackTrace) => null,
-        loading: () => null,
+    final viewer = Container(
+      decoration: BoxDecoration(
+        borderRadius: .circular(8.0),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
       ),
-      isExpanded: _viewMode == .viewerExpanded,
-      onClose: closeViewer,
-      onPrevious: previousMedia,
-      onNext: nextMedia,
-      onExpandOrMinimize: toggleExpandedView,
+      padding: EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 0.0),
+      child: ImageViewer(
+        media: gallery.when(
+          data: (data) =>
+              data.isNotEmpty ? data[_openedMediaIndex].source : null,
+          error: (error, stackTrace) => null,
+          loading: () => null,
+        ),
+        isExpanded: _viewMode == .viewerExpanded,
+        onClose: closeViewer,
+        onPrevious: previousMedia,
+        onNext: nextMedia,
+        onExpandOrMinimize: toggleExpandedView,
+      ),
+    );
+
+    final gridWithFilters = Container(
+      decoration: BoxDecoration(
+        borderRadius: .circular(8.0),
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+      ),
+      padding: EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 0.0),
+      child: Column(
+        spacing: 48.0,
+        children: [
+          const ContentFilters(),
+          Expanded(child: MediaGrid(selectionCallback: openMedia)),
+        ],
+      ),
     );
 
     return switch (_viewMode) {
-      .gridExpanded => MediaGrid(selectionCallback: openMedia),
+      .gridExpanded => gridWithFilters,
       .splitView => Row(
+        spacing: 8.0,
         children: [
-          Expanded(child: MediaGrid(selectionCallback: openMedia)),
+          Expanded(child: gridWithFilters),
           Expanded(child: viewer),
         ],
       ),
@@ -157,36 +177,20 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
 }
 
 /// The header containing the gallery searchbar.
-class AppHeader extends StatelessWidget {
-  const AppHeader({super.key});
+class SearchBar extends StatelessWidget {
+  const SearchBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            onPressed: DoNothingAction.new,
-            icon: Icon(Icons.menu_rounded),
-          ),
-          SearchAnchor.bar(
-            barHintText: "Search Library",
-            barElevation: WidgetStatePropertyAll(0.0),
-            suggestionsBuilder: (context, controller) {
-              return [
-                ListTile(title: Text("Placeholder 1")),
-                ListTile(title: Text("Placeholder 2")),
-              ];
-            },
-          ),
-          IconButton(
-            onPressed: DoNothingAction.new,
-            icon: Icon(Icons.check_box_outlined),
-          ),
-        ],
-      ),
+    return SearchAnchor.bar(
+      barHintText: "Search in gallery",
+      barElevation: WidgetStatePropertyAll(0.0),
+      suggestionsBuilder: (context, controller) {
+        return [
+          ListTile(title: Text("Placeholder 1")),
+          ListTile(title: Text("Placeholder 2")),
+        ];
+      },
     );
   }
 }

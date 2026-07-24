@@ -27,79 +27,74 @@ class ImageViewer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
-    return Pane(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(icon: Icon(Icons.close_rounded), onPressed: onClose, tooltip: "Close"),
+            Row(
               children: [
-                IconButton(icon: Icon(Icons.close_rounded), onPressed: onClose, tooltip: "Close"),
-                Row(
-                  children: [
-                    isExpanded
-                        ? IconButton(
-                            onPressed: onExpandOrMinimize,
-                            icon: Icon(Icons.close_fullscreen_rounded),
-                            tooltip: "Minimize",
-                          )
-                        : IconButton(
-                            onPressed: onExpandOrMinimize,
-                            icon: Icon(Icons.open_in_full_rounded),
-                            tooltip: "Maximize",
-                          ),
-                    MoreButton(
-                      options: [
-                        MenuOption(
-                          label: "Details",
-                          optionCallback: () => print("Details!"),
-                        ),
-                        MenuOption(
-                          label: "View in Black and White",
-                          optionCallback: () => print("Monochromatic!"),
-                          shortcut: SingleActivator(
-                            LogicalKeyboardKey.keyA,
-                            control: true,
-                          ),
-                        ),
-                      ],
+                isExpanded
+                    ? IconButton(
+                        onPressed: onExpandOrMinimize,
+                        icon: Icon(Icons.close_fullscreen_rounded),
+                        tooltip: "Minimize",
+                      )
+                    : IconButton(
+                        onPressed: onExpandOrMinimize,
+                        icon: Icon(Icons.open_in_full_rounded),
+                        tooltip: "Maximize",
+                      ),
+                MoreButton(
+                  options: [
+                    MenuOption(
+                      label: "Details",
+                      optionCallback: () => print("Details!"),
                     ),
-                    
+                    MenuOption(
+                      label: "View in Black and White",
+                      optionCallback: () => print("Monochromatic!"),
+                      shortcut: SingleActivator(
+                        LogicalKeyboardKey.keyA,
+                        control: true,
+                      ),
+                    ),
                   ],
                 ),
+                
               ],
             ),
-          ),
-          Expanded(
-            child: Stack(
-              alignment: AlignmentGeometry.center,
-              children: [
-                // TODO: make it zoomable and pannable
-                media != null 
-                  ? Image.file(media!)
-                  : BodyText("The Image could not be loaded."),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton.filledTonal(
-                        onPressed: onPrevious,
-                        icon: Icon(Icons.chevron_left_rounded),
-                      ),
-                      IconButton.filledTonal(
-                        onPressed: onNext,
-                        icon: Icon(Icons.chevron_right_rounded),
-                      ),
-                    ],
-                  ),
+          ],
+        ),
+        Expanded(
+          child: Stack(
+            alignment: AlignmentGeometry.center,
+            children: [
+              // TODO: make it zoomable and pannable
+              media != null 
+                ? Image.file(media!)
+                : BodyText("The Image could not be loaded."),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton.filledTonal(
+                      onPressed: onPrevious,
+                      icon: Icon(Icons.chevron_left_rounded),
+                    ),
+                    IconButton.filledTonal(
+                      onPressed: onNext,
+                      icon: Icon(Icons.chevron_right_rounded),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

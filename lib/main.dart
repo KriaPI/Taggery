@@ -29,8 +29,8 @@ class MainApp extends ConsumerWidget {
     return MaterialApp.router(
       shortcuts: keybindings,
       routerConfig: router.requireValue,
-      darkTheme: ThemeData.dark(),
-      theme: defaultTheme,
+      darkTheme: taggeryDarkTheme,
+      theme: taggeryLightTheme,
       themeMode: ThemeMode.light,
     );
   }

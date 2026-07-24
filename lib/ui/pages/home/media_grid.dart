@@ -23,7 +23,7 @@ class MediaGrid extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: .center,
           children: [
-            TitleText("An error occurred while loading."),
+            TitleText("Could not load images."),
             BodyText("$error"),
             BodyText("$stackTrace"),
           ],
@@ -36,6 +36,7 @@ class MediaGrid extends ConsumerWidget {
                 .round(),
             crossAxisSpacing: 8.0,
             mainAxisSpacing: 24.0,
+            // TODO: calculate this ratio to be the exact ratio of the widget and not an arbitrary fraction (this causes errors in the layout). 
             childAspectRatio: 0.9,
             children: List.generate(data.length, (index) {
               final GalleryEntry entry = data[index];
