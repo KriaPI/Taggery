@@ -90,7 +90,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
         borderRadius: .circular(8.0),
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
       ),
-      padding: EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 0.0),
+      padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: ImageViewer(
         media: gallery.when(
           data: (data) =>

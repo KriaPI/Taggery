@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/more_button.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 
@@ -26,13 +25,16 @@ class ImageViewer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(icon: Icon(Icons.close_rounded), onPressed: onClose, tooltip: "Close"),
+            IconButton(
+              icon: Icon(Icons.close_rounded),
+              onPressed: onClose,
+              tooltip: "Close",
+            ),
             Row(
               children: [
                 isExpanded
@@ -62,7 +64,6 @@ class ImageViewer extends ConsumerWidget {
                     ),
                   ],
                 ),
-                
               ],
             ),
           ],
@@ -72,9 +73,13 @@ class ImageViewer extends ConsumerWidget {
             alignment: AlignmentGeometry.center,
             children: [
               // TODO: make it zoomable and pannable
-              media != null 
-                ? Image.file(media!)
-                : BodyText("The Image could not be loaded."),
+              media != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
+                      clipBehavior: .antiAlias,
+                      child: Image.file(media!),
+                    )
+                  : BodyText("The Image could not be loaded."),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
