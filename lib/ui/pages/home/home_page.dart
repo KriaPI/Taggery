@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/providers/gallery_provider.dart';
-import 'package:taggery/ui/pages/home/content_filters.dart';
-import 'package:taggery/ui/pages/home/media_grid.dart';
-import 'package:taggery/ui/pages/home/image_viewer.dart';
+import 'package:taggery/ui/pages/home/content_area.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -21,7 +17,6 @@ class HomePage extends StatelessWidget {
                 spacing: 8.0,
                 children: [
                   const SearchBar(),
-
                   Expanded(child: ContentArea()),
                 ],
               ),
@@ -63,116 +58,6 @@ class AppPageNavigator extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
-
-/// A widget composed of two child widgets, a grid of photo tiles and a media "viewer", arranged in a row. The state of the two
-/// child widgets are dependent on each other and handled by this widget.
-class ContentArea extends ConsumerStatefulWidget {
-  const ContentArea({super.key});
-
-  @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _ContentAreaState();
-}
-
-class _ContentAreaState extends ConsumerState<ContentArea> {
-  ContentAreaViewMode _viewMode = .gridExpanded;
-  int _openedMediaIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    final gallery = ref.watch(galleryProvider);
-
-    final viewer = Container(
-      decoration: BoxDecoration(
-        borderRadius: .circular(8.0),
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-      ),
-      padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      child: ImageViewer(
-        media: gallery.when(
-          data: (data) =>
-              data.isNotEmpty ? data[_openedMediaIndex].source : null,
-          error: (error, stackTrace) => null,
-          loading: () => null,
-        ),
-        isExpanded: _viewMode == .viewerExpanded,
-        onClose: closeViewer,
-        onPrevious: previousMedia,
-        onNext: nextMedia,
-        onExpandOrMinimize: toggleExpandedView,
-      ),
-    );
-
-    final gridWithFilters = Container(
-      decoration: BoxDecoration(
-        borderRadius: .circular(8.0),
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-      ),
-      padding: EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 0.0),
-      child: Column(
-        spacing: 48.0,
-        children: [
-          const ContentFilters(),
-          Expanded(child: MediaGrid(selectionCallback: openMedia)),
-        ],
-      ),
-    );
-
-    return switch (_viewMode) {
-      .gridExpanded => gridWithFilters,
-      .splitView => Row(
-        spacing: 8.0,
-        children: [
-          Expanded(child: gridWithFilters),
-          Expanded(child: viewer),
-        ],
-      ),
-      .viewerExpanded => viewer,
-    };
-  }
-
-  void closeViewer() {
-    setState(() {
-      _viewMode = .gridExpanded;
-    });
-  }
-
-  void toggleExpandedView() {
-    if (_viewMode == .splitView) {
-      setState(() {
-        _viewMode = .viewerExpanded;
-      });
-    } else if (_viewMode == .viewerExpanded) {
-      setState(() {
-        _viewMode = .splitView;
-      });
-    } else {
-      // This should never happen!
-      assert(false);
-    }
-  }
-
-  void openMedia(int index) {
-    setState(() {
-      _openedMediaIndex = index;
-      _viewMode = .splitView;
-    });
-  }
-
-  // TODO: do bounds checking.
-  void previousMedia() {
-    setState(() {
-      _openedMediaIndex = --_openedMediaIndex;
-    });
-  }
-
-  void nextMedia() {
-    setState(() {
-      _openedMediaIndex = ++_openedMediaIndex;
-    });
   }
 }
 

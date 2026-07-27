@@ -3,20 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/ui/components/more_button.dart';
-import 'package:taggery/ui/components/text_variants.dart';
 
-/// The media viewer for the home page. This is not a reusuable component.
-class ImageViewer extends ConsumerWidget {
+class ImageViewer extends ConsumerStatefulWidget {
   const ImageViewer({
     super.key,
-    required this.media,
-    required this.onClose,
-    required this.onExpandOrMinimize,
+    required this.image,
     required this.onPrevious,
     required this.onNext,
+    required this.onClose,
+    required this.onExpandOrMinimize,
     required this.isExpanded,
   });
-  final File? media;
+  final File image;
   final bool isExpanded;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -24,7 +22,12 @@ class ImageViewer extends ConsumerWidget {
   final VoidCallback onExpandOrMinimize;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConsumerStatefulWidget> createState() => ImageViewerState();
+}
+
+class ImageViewerState extends ConsumerState<ImageViewer> {
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Row(
@@ -32,19 +35,19 @@ class ImageViewer extends ConsumerWidget {
           children: [
             IconButton(
               icon: Icon(Icons.close_rounded),
-              onPressed: onClose,
+              onPressed: widget.onClose,
               tooltip: "Close",
             ),
             Row(
               children: [
-                isExpanded
+                widget.isExpanded
                     ? IconButton(
-                        onPressed: onExpandOrMinimize,
+                        onPressed: widget.onExpandOrMinimize,
                         icon: Icon(Icons.close_fullscreen_rounded),
                         tooltip: "Minimize",
                       )
                     : IconButton(
-                        onPressed: onExpandOrMinimize,
+                        onPressed: widget.onExpandOrMinimize,
                         icon: Icon(Icons.open_in_full_rounded),
                         tooltip: "Maximize",
                       ),
@@ -73,24 +76,22 @@ class ImageViewer extends ConsumerWidget {
             alignment: AlignmentGeometry.center,
             children: [
               // TODO: make it zoomable and pannable
-              media != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
-                      clipBehavior: .antiAlias,
-                      child: Image.file(media!),
-                    )
-                  : BodyText("The Image could not be loaded."),
+              ClipRRect(
+                borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
+                clipBehavior: .antiAlias,
+                child: Image.file(widget.image),
+              ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton.filledTonal(
-                      onPressed: onPrevious,
+                      onPressed: widget.onPrevious,
                       icon: Icon(Icons.chevron_left_rounded),
                     ),
                     IconButton.filledTonal(
-                      onPressed: onNext,
+                      onPressed: widget.onNext,
                       icon: Icon(Icons.chevron_right_rounded),
                     ),
                   ],

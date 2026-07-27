@@ -1,41 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/model/gallery_entry.dart';
-import 'package:taggery/providers/gallery_provider.dart';
-import 'package:taggery/ui/components/containers.dart';
-import 'package:taggery/ui/components/text_variants.dart';
 
 // TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that should be displayed at most when the app is in fullscreen and does not have the viewer open).
 const int arbitraryMinimumCellSize = 300;
 
 class MediaGrid extends ConsumerWidget {
-  const MediaGrid({super.key, required this.selectionCallback});
-  final void Function(int index) selectionCallback;
+  const MediaGrid({super.key, required this.onSelect, required this.data});
+  final void Function(int index) onSelect;
+  final List<GalleryEntry> data;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final gallery = ref.watch(galleryProvider);
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
 
-    return gallery.when(
-      loading: () => Pane(child: BodyText("Loading Images...")),
-      error: (error, stackTrace) => Pane(
-        child: Column(
-          crossAxisAlignment: .center,
-          children: [
-            TitleText("Could not load images."),
-            BodyText("$error"),
-            BodyText("$stackTrace"),
-          ],
-        ),
-      ),
-      data: (data) => LayoutBuilder(
+    return LayoutBuilder(
         builder: (context, constraints) {
           return GridView.count(
             crossAxisCount: (constraints.maxWidth / arbitraryMinimumCellSize)
                 .round(),
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 24.0,
+            crossAxisSpacing: 16.0,
+            mainAxisSpacing: 32.0,
             // TODO: calculate this ratio to be the exact ratio of the widget and not an arbitrary fraction (this causes errors in the layout). 
             childAspectRatio: 0.9,
             children: List.generate(data.length, (index) {
@@ -50,13 +35,12 @@ class MediaGrid extends ConsumerWidget {
                   fit: .cover,
                 ),
                 index: index,
-                onTap: selectionCallback,
+                onTap: onSelect,
                 tags: entry.tags,
               );
             }).toList(),
           );
         },
-      ),
     );
   }
 }
