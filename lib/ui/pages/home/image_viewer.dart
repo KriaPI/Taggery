@@ -53,6 +53,7 @@ class ImageViewer extends ConsumerStatefulWidget {
 
 class ImageViewerState extends ConsumerState<ImageViewer> {
   bool _isMonochrome = false;
+  bool _pinControls = true;
 
   @override
   Widget build(BuildContext context) {
@@ -105,8 +106,13 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                // TODO: figure out how to keep the state so that it is not unpinned when the widget is rebuilt. 
                 child: PinnableSlidingContainer(
+                  isPinned: _pinControls,
+                  onTogglePin: () {
+                    setState(() {
+                      _pinControls = !_pinControls;
+                    });
+                  },
                   children: [
                     SquareTonalIconButton(
                       tooltip: "previous",
@@ -123,7 +129,9 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
                           ? "View in color"
                           : "View in monochrome",
                       onPressed: () {
-                        _isMonochrome = !_isMonochrome;
+                        setState(() {
+                          _isMonochrome = !_isMonochrome;
+                        });
                       },
                       icon: Icon(Icons.filter_b_and_w_rounded),
                     ),
@@ -151,7 +159,9 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
 ///
 /// [children] are arranged to the sides of the pin button.
 class PinnableSlidingContainer extends StatefulWidget {
-  const PinnableSlidingContainer({super.key, required this.children});
+  const PinnableSlidingContainer({super.key, required this.isPinned, required this.onTogglePin, required this.children});
+  final bool isPinned;
+  final VoidCallback onTogglePin;
   final List<Widget> children;
 
   @override
@@ -159,19 +169,14 @@ class PinnableSlidingContainer extends StatefulWidget {
 }
 
 class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
-  bool _isPinned = true;
   bool _isShown = true;
 
   @override
   Widget build(BuildContext context) {
     final hideButton = SquareTonalIconButton(
-      tooltip: _isPinned ? "Unpin" : "Pin",
-      onPressed: () {
-        setState(() {
-          _isPinned = !_isPinned;
-        });
-      },
-      icon: _isPinned
+      tooltip: widget.isPinned ? "Unpin" : "Pin",
+      onPressed: widget.onTogglePin,
+      icon: widget.isPinned
           ? Icon(Icons.arrow_drop_down_rounded)
           : Icon(Icons.arrow_drop_up_rounded),
     );
@@ -190,7 +195,7 @@ class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
       children: buttons,
     );
 
-    return _isPinned
+    return widget.isPinned
         ? controls
         : MouseRegion(
             onEnter: (event) {
