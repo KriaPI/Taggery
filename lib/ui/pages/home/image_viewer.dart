@@ -107,16 +107,17 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
                       icon: Icon(Icons.info_outline_rounded),
                       onPressed: () {},
                     ),
-                    SquareTonalIconButton(
-                      tooltip: _isMonochrome
-                          ? "View in color"
-                          : "View in monochrome",
+                    TonalToggleIconButton(
+                      selectedTooltip: "View in color",
+                      tooltip: "View in monochrome",
+                      isSelected: _isMonochrome,
                       onPressed: () {
                         setState(() {
                           _isMonochrome = !_isMonochrome;
                         });
                       },
-                      icon: Icon(Icons.filter_b_and_w_rounded),
+                      icon: Icon(Icons.filter_b_and_w_outlined),
+                      selectedIcon: Icon(Icons.filter_b_and_w)
                     ),
                     SquareTonalIconButton(
                       tooltip: "next",
@@ -164,12 +165,12 @@ class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final hideButton = SquareTonalIconButton(
+    final hideButton = TonalToggleIconButton.narrow(
+      isSelected: widget.isPinned,
       tooltip: widget.isPinned ? "Unpin" : "Pin",
       onPressed: widget.onTogglePin,
-      icon: widget.isPinned
-          ? Icon(Icons.arrow_drop_down_rounded)
-          : Icon(Icons.arrow_drop_up_rounded),
+      icon: Icon(Icons.push_pin_outlined),
+      selectedIcon: Icon(Icons.push_pin),
     );
 
     final int middle = widget.children.length ~/ 2;
@@ -217,7 +218,7 @@ class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
 }
 
 /// A widget that allows for panning, zooming, and applying a monochrome filter on an image.
-/// 
+///
 /// [source] is the image's file.
 class ImageArea extends StatefulWidget {
   const ImageArea({
@@ -264,7 +265,9 @@ class _ImageAreaState extends State<ImageArea> {
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      cursor: _isZoomedIn ? SystemMouseCursors.allScroll : SystemMouseCursors.basic,
+      cursor: _isZoomedIn
+          ? SystemMouseCursors.allScroll
+          : SystemMouseCursors.basic,
       child: ClipRRect(
         borderRadius: .circular(8.0),
         child: InteractiveViewer(
