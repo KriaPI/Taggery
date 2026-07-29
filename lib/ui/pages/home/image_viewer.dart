@@ -219,7 +219,7 @@ class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
 /// A widget that allows for panning, zooming, and applying a monochrome filter on an image.
 /// 
 /// [source] is the image's file.
-class ImageArea extends StatelessWidget {
+class ImageArea extends StatefulWidget {
   const ImageArea({
     super.key,
     required this.source,
@@ -228,24 +228,57 @@ class ImageArea extends StatelessWidget {
   final File source;
   final bool isMonochrome;
 
-  // TODO: only change the mouse cursor when the image is zoomed into, otherwise use the default mouse cursor.
+  @override
+  State<ImageArea> createState() => _ImageAreaState();
+}
+
+class _ImageAreaState extends State<ImageArea> {
+  late final TransformationController _transformationController;
+  bool _isZoomedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _transformationController = TransformationController();
+    _transformationController.addListener(_onTransformationChanged);
+  }
+
+  void _onTransformationChanged() {
+    final double scale = _transformationController.value.getMaxScaleOnAxis();
+    final bool zoomedIn = scale > 1.05;
+
+    if (zoomedIn != _isZoomedIn) {
+      setState(() {
+        _isZoomedIn = zoomedIn;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _transformationController.removeListener(_onTransformationChanged);
+    _transformationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      cursor: SystemMouseCursors.allScroll,
+      cursor: _isZoomedIn ? SystemMouseCursors.allScroll : SystemMouseCursors.basic,
       child: ClipRRect(
         borderRadius: .circular(8.0),
         child: InteractiveViewer(
+          transformationController: _transformationController,
           clipBehavior: Clip.antiAlias,
           minScale: 1.0,
           maxScale: 10.0,
           child: SizedBox.expand(
-            child: isMonochrome
+            child: widget.isMonochrome
                 ? ColorFiltered(
                     colorFilter: grayscaleFilter,
-                    child: Image.file(source, fit: .contain),
+                    child: Image.file(widget.source, fit: .contain),
                   )
-                : Image.file(source, fit: .contain),
+                : Image.file(widget.source, fit: .contain),
           ),
         ),
       ),
