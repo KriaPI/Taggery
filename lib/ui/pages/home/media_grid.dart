@@ -1,46 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/model/gallery_entry.dart';
 
-// TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that should be displayed at most when the app is in fullscreen and does not have the viewer open).
+// TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that §ould be displayed at most when the app is in fullscreen and does not have the viewer open).
 const int arbitraryMinimumCellSize = 300;
 
-class MediaGrid extends ConsumerWidget {
+// TODO: keep scrolling even if the widget changes dimensions.
+class MediaGrid extends StatelessWidget {
   const MediaGrid({super.key, required this.onSelect, required this.data});
   final void Function(int index) onSelect;
   final List<GalleryEntry> data;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     return LayoutBuilder(
-        builder: (context, constraints) {
-          return GridView.count(
-            crossAxisCount: (constraints.maxWidth / arbitraryMinimumCellSize)
-                .round(),
+      builder: (context, constraints) {
+        final crossAxisCount = (constraints.maxWidth / arbitraryMinimumCellSize)
+            .round()
+            .clamp(1, 10);
+
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
             crossAxisSpacing: 16.0,
             mainAxisSpacing: 32.0,
-            // TODO: calculate this ratio to be the exact ratio of the widget and not an arbitrary fraction (this causes errors in the layout). 
+            // TODO: dynamically calculate the childaspectratio.
             childAspectRatio: 0.9,
-            children: List.generate(data.length, (index) {
-              final GalleryEntry entry = data[index];
-              return ImageTile(
-                media: Image(
-                  image: ResizeImage(
-                    FileImage(entry.source),
-                    width: (arbitraryMinimumCellSize * pixelRatio).round(),
-                    allowUpscaling: true,
-                  ),
-                  fit: .cover,
+          ),
+          itemCount: data.length,
+          itemBuilder: (context, index) {
+            final GalleryEntry entry = data[index];
+            return ImageTile(
+              media: Image(
+                image: ResizeImage(
+                  FileImage(entry.source),
+                  width: (arbitraryMinimumCellSize * pixelRatio).round(),
+                  allowUpscaling: true,
                 ),
-                index: index,
-                onTap: onSelect,
-                tags: entry.tags,
-              );
-            }).toList(),
-          );
-        },
+                fit: .cover,
+              ),
+              index: index,
+              onTap: onSelect,
+              tags: entry.tags,
+            );
+          },
+        );
+      },
     );
   }
 }
