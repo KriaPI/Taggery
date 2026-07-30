@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/ui/components/buttons.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 
 const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
@@ -113,45 +112,43 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
                     isMonochrome: _isMonochrome,
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: PinnableSlidingContainer(
-                    isPinned: _pinControls,
-                    onTogglePin: () {
-                      setState(() {
-                        _pinControls = !_pinControls;
-                      });
-                    },
-                    children: [
-                      SquareTonalIconButton(
-                        tooltip: "previous (Left arrow)",
-                        onPressed: widget.onPrevious,
-                        icon: Icon(Icons.chevron_left_rounded),
-                      ),
-                      SquareTonalIconButton(
-                        tooltip: "Details",
-                        icon: Icon(Icons.info_outline_rounded),
-                        onPressed: () {},
-                      ),
-                      TonalToggleIconButton(
-                        selectedTooltip: "View in color (B)",
-                        tooltip: "View in monochrome (B)",
-                        isSelected: _isMonochrome,
-                        onPressed: () {
-                          setState(() {
-                            _isMonochrome = !_isMonochrome;
-                          });
-                        },
-                        icon: Icon(Icons.filter_b_and_w_outlined),
-                        selectedIcon: Icon(Icons.filter_b_and_w),
-                      ),
-                      SquareTonalIconButton(
-                        tooltip: "next (Right arrow)",
-                        onPressed: widget.onNext,
-                        icon: Icon(Icons.chevron_right_rounded),
-                      ),
-                    ],
-                  ),
+                PinnableFloatingToolbar(
+                  isPinned: _pinControls,
+                  onTogglePin: () {
+                    setState(() {
+                      _pinControls = !_pinControls;
+                    });
+                  },
+                  children: [
+                    IconButton(
+                      tooltip: "previous (Left arrow)",
+                      onPressed: widget.onPrevious,
+                      icon: Icon(Icons.chevron_left_rounded),
+                    ),
+                    IconButton(
+                      tooltip: "next (Right arrow)",
+                      onPressed: widget.onNext,
+                      icon: Icon(Icons.chevron_right_rounded),
+                    ),
+                    IconButton(
+                      tooltip: "Details",
+                      icon: Icon(Icons.info_outline_rounded),
+                      onPressed: () {},
+                    ),
+                    IconButton(
+                      tooltip: _isMonochrome
+                          ? "View in color (B)"
+                          : "View in monochrome (B)",
+                      isSelected: _isMonochrome,
+                      onPressed: () {
+                        setState(() {
+                          _isMonochrome = !_isMonochrome;
+                        });
+                      },
+                      icon: Icon(Icons.filter_b_and_w_outlined),
+                      selectedIcon: Icon(Icons.filter_b_and_w),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -162,7 +159,7 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
   }
 }
 
-/// A container arranging its children in a row that can be automatically hidden.
+/// A pinnable/unpinnable version of the floating toolbar component of Material Design 3 Expressive. 
 ///
 /// This widget has a button that allows the container to be pinned (default) or unpinned.
 /// If the widget is unpinned, then it will slide down and out of view when the mouse is
@@ -172,8 +169,8 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
 /// belonging to the parent.
 /// [onTogglePin] should be a callback to a function that assigns a new value to the parent's attribute that [isPinned] derives its value from.
 /// [children] are arranged to the sides of the pin button.
-class PinnableSlidingContainer extends StatefulWidget {
-  const PinnableSlidingContainer({
+class PinnableFloatingToolbar extends StatefulWidget {
+  const PinnableFloatingToolbar({
     super.key,
     required this.isPinned,
     required this.onTogglePin,
@@ -184,18 +181,17 @@ class PinnableSlidingContainer extends StatefulWidget {
   final List<Widget> children;
 
   @override
-  State<StatefulWidget> createState() => PinnableSlidingContainerState();
+  State<StatefulWidget> createState() => PinnableFloatingToolbarState();
 }
 
-class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
+class PinnableFloatingToolbarState extends State<PinnableFloatingToolbar> {
   bool _isShown = true;
 
   @override
   Widget build(BuildContext context) {
-    final hideButton = TonalToggleIconButton.narrow(
+    final hideButton = IconButton(
       isSelected: widget.isPinned,
-      selectedTooltip: "Unpin",
-      tooltip: "Pin",
+      tooltip: widget.isPinned ? "Unpin" : "Pin",
       onPressed: widget.onTogglePin,
       icon: Icon(Icons.push_pin_outlined),
       selectedIcon: Icon(Icons.push_pin),
@@ -209,10 +205,26 @@ class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
       ...widget.children.sublist(middle),
     ];
 
-    final controls = Row(
-      mainAxisAlignment: .center,
-      spacing: 4.0,
-      children: buttons,
+    final controls = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32.0),
+        ),
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        child: SizedBox(
+          height: 64.0,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              mainAxisSize: .min,
+              mainAxisAlignment: .center,
+              spacing: 4.0,
+              children: buttons,
+            ),
+          ),
+        ),
+      ),
     );
 
     return widget.isPinned
