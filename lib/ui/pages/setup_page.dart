@@ -80,7 +80,7 @@ class PickRootFolderDialog extends StatelessWidget {
         TitleText(messageTitle),
         BodyText(messageBody),
         SizedBox(height: 16.0),
-        FilledButton.tonalIcon(
+        FilledButton.icon(
           onPressed: onPressed,
           label: Text("Set root folder"),
           icon: Icon(Icons.folder_open_rounded),
