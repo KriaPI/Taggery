@@ -2,8 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/ui/components/buttons.dart';
-
-// TODO: add keyboard shortcuts.
+import 'package:taggery/ui/configuration/default_keybindings.dart';
 
 const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0.2126,
@@ -59,78 +58,106 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: Icon(Icons.close_rounded),
-              onPressed: widget.onClose,
-              tooltip: "Close",
-            ),
-            widget.isExpanded
-                ? IconButton(
-                    onPressed: widget.onExpandOrMinimize,
-                    icon: Icon(Icons.close_fullscreen_rounded),
-                    tooltip: "Minimize",
-                  )
-                : IconButton(
-                    onPressed: widget.onExpandOrMinimize,
-                    icon: Icon(Icons.open_in_full_rounded),
-                    tooltip: "Maximize",
-                  ),
-          ],
-        ),
-        Expanded(
-          child: Stack(
-            alignment: .bottomCenter,
+    final Map<Type, Action<Intent>> viewerActions = {
+      PreviousIntent: CallbackAction<PreviousIntent>(
+        onInvoke: (intent) => widget.onPrevious(),
+      ),
+      NextIntent: CallbackAction<NextIntent>(
+        onInvoke: (intent) => widget.onNext(),
+      ),
+      ToggleMonochromeFilterIntent:
+          CallbackAction<ToggleMonochromeFilterIntent>(
+            onInvoke: (intent) => setState(() {
+              _isMonochrome = !_isMonochrome;
+            }),
+          ),
+      CloseIntent: CallbackAction<CloseIntent>(
+        onInvoke: (intent) => widget.onClose(),
+      ),
+    };
+
+    return Actions(
+      actions: viewerActions,
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              ImageArea(source: widget.image, isMonochrome: _isMonochrome),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: PinnableSlidingContainer(
-                  isPinned: _pinControls,
-                  onTogglePin: () {
-                    setState(() {
-                      _pinControls = !_pinControls;
-                    });
-                  },
-                  children: [
-                    SquareTonalIconButton(
-                      tooltip: "previous",
-                      onPressed: widget.onPrevious,
-                      icon: Icon(Icons.chevron_left_rounded),
-                    ),
-                    SquareTonalIconButton(
-                      tooltip: "Details",
-                      icon: Icon(Icons.info_outline_rounded),
-                      onPressed: () {},
-                    ),
-                    TonalToggleIconButton(
-                      selectedTooltip: "View in color",
-                      tooltip: "View in monochrome",
-                      isSelected: _isMonochrome,
-                      onPressed: () {
-                        setState(() {
-                          _isMonochrome = !_isMonochrome;
-                        });
-                      },
-                      icon: Icon(Icons.filter_b_and_w_outlined),
-                      selectedIcon: Icon(Icons.filter_b_and_w)
-                    ),
-                    SquareTonalIconButton(
-                      tooltip: "next",
-                      onPressed: widget.onNext,
-                      icon: Icon(Icons.chevron_right_rounded),
-                    ),
-                  ],
-                ),
+              IconButton(
+                icon: Icon(Icons.close_rounded),
+                onPressed: widget.onClose,
+                tooltip: "Close",
               ),
+              widget.isExpanded
+                  ? IconButton(
+                      onPressed: widget.onExpandOrMinimize,
+                      icon: Icon(Icons.close_fullscreen_rounded),
+                      tooltip: "Minimize",
+                    )
+                  : IconButton(
+                      onPressed: widget.onExpandOrMinimize,
+                      icon: Icon(Icons.open_in_full_rounded),
+                      tooltip: "Maximize",
+                    ),
             ],
           ),
-        ),
-      ],
+          Expanded(
+            child: Stack(
+              alignment: .bottomCenter,
+              children: [
+                // This focus widget is needed to allow keyboard events to propagate up.
+                Focus(
+                  autofocus: true,
+                  child: ImageArea(
+                    source: widget.image,
+                    isMonochrome: _isMonochrome,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: PinnableSlidingContainer(
+                    isPinned: _pinControls,
+                    onTogglePin: () {
+                      setState(() {
+                        _pinControls = !_pinControls;
+                      });
+                    },
+                    children: [
+                      SquareTonalIconButton(
+                        tooltip: "previous (Left arrow)",
+                        onPressed: widget.onPrevious,
+                        icon: Icon(Icons.chevron_left_rounded),
+                      ),
+                      SquareTonalIconButton(
+                        tooltip: "Details",
+                        icon: Icon(Icons.info_outline_rounded),
+                        onPressed: () {},
+                      ),
+                      TonalToggleIconButton(
+                        selectedTooltip: "View in color (B)",
+                        tooltip: "View in monochrome (B)",
+                        isSelected: _isMonochrome,
+                        onPressed: () {
+                          setState(() {
+                            _isMonochrome = !_isMonochrome;
+                          });
+                        },
+                        icon: Icon(Icons.filter_b_and_w_outlined),
+                        selectedIcon: Icon(Icons.filter_b_and_w),
+                      ),
+                      SquareTonalIconButton(
+                        tooltip: "next (Right arrow)",
+                        onPressed: widget.onNext,
+                        icon: Icon(Icons.chevron_right_rounded),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -167,7 +194,8 @@ class PinnableSlidingContainerState extends State<PinnableSlidingContainer> {
   Widget build(BuildContext context) {
     final hideButton = TonalToggleIconButton.narrow(
       isSelected: widget.isPinned,
-      tooltip: widget.isPinned ? "Unpin" : "Pin",
+      selectedTooltip: "Unpin",
+      tooltip: "Pin",
       onPressed: widget.onTogglePin,
       icon: Icon(Icons.push_pin_outlined),
       selectedIcon: Icon(Icons.push_pin),

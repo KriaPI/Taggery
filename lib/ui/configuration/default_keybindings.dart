@@ -1,16 +1,20 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 
-class MoveToPreviousIntent extends Intent {
-  const MoveToPreviousIntent();
+class PreviousIntent extends Intent {
+  const PreviousIntent();
 }
 
-class MoveToNextIntent extends Intent {
-  const MoveToNextIntent();
+class NextIntent extends Intent {
+  const NextIntent();
 }
 
 class CloseIntent extends Intent {
   const CloseIntent();
+}
+
+class ToggleMonochromeFilterIntent extends Intent {
+  const ToggleMonochromeFilterIntent();
 }
 
 class PauseOrResumeIntent extends Intent {
@@ -18,8 +22,9 @@ class PauseOrResumeIntent extends Intent {
 }
 
 const Map<ShortcutActivator, Intent> keybindings = {
-  SingleActivator(LogicalKeyboardKey.arrowLeft): MoveToPreviousIntent(),
-  SingleActivator(LogicalKeyboardKey.arrowRight): MoveToNextIntent(),
+  SingleActivator(LogicalKeyboardKey.arrowLeft): PreviousIntent(),
+  SingleActivator(LogicalKeyboardKey.arrowRight): NextIntent(),
   SingleActivator(LogicalKeyboardKey.escape): CloseIntent(),
+  SingleActivator(LogicalKeyboardKey.keyB): ToggleMonochromeFilterIntent(),
   SingleActivator(LogicalKeyboardKey.space): PauseOrResumeIntent(),
 };
