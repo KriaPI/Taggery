@@ -23,7 +23,7 @@ class MediaGrid extends StatelessWidget {
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 16.0,
+            crossAxisSpacing: 8.0,
             mainAxisSpacing: 32.0,
             // TODO: dynamically calculate the childaspectratio.
             childAspectRatio: 0.9,

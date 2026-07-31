@@ -69,6 +69,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
           Expanded(
             child: gallery.when(
               data: (data) => MediaGrid(
+                key: PageStorageKey("Gallery grid scroll extent"),
                 onSelect: openViewer,
                 data: data as List<GalleryEntry>,
               ),
