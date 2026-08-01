@@ -51,7 +51,7 @@ class MediaGrid extends StatelessWidget {
   }
 }
 
-class ImageTile extends StatelessWidget {
+class ImageTile extends StatefulWidget {
   const ImageTile({
     super.key,
     required this.media,
@@ -73,26 +73,51 @@ class ImageTile extends StatelessWidget {
   final List<String> tags;
 
   @override
+  State<ImageTile> createState() => _ImageTileState();
+}
+
+class _ImageTileState extends State<ImageTile> {
+  bool isHoveredOver = false;
+
+  @override
   Widget build(BuildContext context) {
+    final thumbnail = AspectRatio(
+      aspectRatio: 1,
+      child: ClipRRect(
+        borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
+        clipBehavior: .antiAlias,
+        child: isHoveredOver
+            ? ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                  Colors.black.withValues(alpha: 0.2),
+                  BlendMode.darken,
+                ),
+                child: widget.media,
+              )
+            : widget.media,
+      ),
+    );
+
     return GestureDetector(
-      onTap: () => onTap(index),
-      child: Column(
-        crossAxisAlignment: .stretch,
-        spacing: 8.0,
-        children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: ClipRRect(
-              borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
-              clipBehavior: .antiAlias,
-              child: media,
+      onTap: () => widget.onTap(widget.index),
+      child: MouseRegion(
+        onEnter: (_) => setState(() {
+          isHoveredOver = true;
+        }),
+        onExit: (_) => setState(() {
+          isHoveredOver = false;
+        }),
+        child: Column(
+          crossAxisAlignment: .stretch,
+          spacing: 8.0,
+          children: [
+            thumbnail,
+            Text(
+              widget.tags.take(4).map((element) => "#$element ").join(),
+              overflow: .ellipsis,
             ),
-          ),
-          Text(
-            tags.take(4).map((element) => "#$element ").join(),
-            overflow: .ellipsis,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

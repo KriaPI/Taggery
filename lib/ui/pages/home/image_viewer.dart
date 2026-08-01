@@ -26,6 +26,10 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0,
 ]);
 
+
+// TODO: take multiple gallery entries instead of separate fields of one entry. The viewer must be able to keep a list of entries that have been opened. 
+// TODO: think of how the user should be able to open multiple images at once. 
+
 /// This widget allows the user to view an image.
 ///
 /// It additionally allows the user to show the previous and next image, view information about the image,
@@ -112,6 +116,7 @@ class ImageViewerState extends ConsumerState<ImageViewer> with TickerProviderSta
           Expanded(
             child: TabBarView(
               controller: tabBarController,
+              // TODO: extract everything in the stack and the stack itself. 
               children: [Stack(
                 alignment: .bottomCenter,
                 children: [
