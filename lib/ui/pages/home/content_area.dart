@@ -17,7 +17,6 @@ enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 class ContentArea extends ConsumerStatefulWidget {
   const ContentArea({super.key});
 
-
   @override
   ConsumerState<ConsumerStatefulWidget> createState() => _ContentAreaState();
 }
@@ -33,9 +32,11 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
 
     final viewer = gallery.when(
       data: (data) {
+        final entry = data[viewedIndex] as GalleryEntry;
         return ImageViewer(
           key: _viewerKey,
-          image: (data[viewedIndex] as GalleryEntry).source,
+          image: entry.source,
+          name: entry.name,
           onPrevious: () => previous(data.length - 1),
           onNext: () => next(data.length - 1),
           onClose: closeViewer,
@@ -130,9 +131,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   }
 
   void previous(int lastIndex) {
-    int newIndex = viewedIndex != 0
-        ? viewedIndex - 1
-        : lastIndex;
+    int newIndex = viewedIndex != 0 ? viewedIndex - 1 : lastIndex;
 
     setState(() {
       viewedIndex = newIndex;
@@ -140,9 +139,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   }
 
   void next(int lastIndex) {
-    int newIndex = viewedIndex != lastIndex
-        ? viewedIndex + 1
-        : 0;
+    int newIndex = viewedIndex != lastIndex ? viewedIndex + 1 : 0;
 
     setState(() {
       viewedIndex = newIndex;

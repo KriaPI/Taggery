@@ -34,6 +34,7 @@ class ImageViewer extends ConsumerStatefulWidget {
   const ImageViewer({
     super.key,
     required this.image,
+    required this.name,
     required this.onPrevious,
     required this.onNext,
     required this.onClose,
@@ -41,6 +42,7 @@ class ImageViewer extends ConsumerStatefulWidget {
     required this.isExpanded,
   });
   final File image;
+  final String name;
   final bool isExpanded;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -51,10 +53,11 @@ class ImageViewer extends ConsumerStatefulWidget {
   ConsumerState<ConsumerStatefulWidget> createState() => ImageViewerState();
 }
 
-class ImageViewerState extends ConsumerState<ImageViewer> {
+class ImageViewerState extends ConsumerState<ImageViewer> with TickerProviderStateMixin {
+  late final TabController tabBarController;
   bool _isMonochrome = false;
   bool _pinControls = true;
-
+  
   @override
   Widget build(BuildContext context) {
     final Map<Type, Action<Intent>> viewerActions = {
@@ -87,6 +90,12 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
                 onPressed: widget.onClose,
                 tooltip: "Close",
               ),
+              Expanded(
+                child: TabBar(
+                      tabs: [Tab(text: widget.name)],
+                      controller: tabBarController,
+                    ),
+              ),
               widget.isExpanded
                   ? IconButton(
                       onPressed: widget.onExpandOrMinimize,
@@ -101,65 +110,80 @@ class ImageViewerState extends ConsumerState<ImageViewer> {
             ],
           ),
           Expanded(
-            child: Stack(
-              alignment: .bottomCenter,
-              children: [
-                // This focus widget is needed to allow keyboard events to propagate up.
-                Focus(
-                  autofocus: true,
-                  child: ImageArea(
-                    source: widget.image,
-                    isMonochrome: _isMonochrome,
+            child: TabBarView(
+              controller: tabBarController,
+              children: [Stack(
+                alignment: .bottomCenter,
+                children: [
+                  // This focus widget is needed to allow keyboard events to propagate up.
+                  Focus(
+                    autofocus: true,
+                    child: ImageArea(
+                      source: widget.image,
+                      isMonochrome: _isMonochrome,
+                    ),
                   ),
-                ),
-                PinnableFloatingToolbar(
-                  isPinned: _pinControls,
-                  onTogglePin: () {
-                    setState(() {
-                      _pinControls = !_pinControls;
-                    });
-                  },
-                  children: [
-                    IconButton(
-                      tooltip: "previous (Left arrow)",
-                      onPressed: widget.onPrevious,
-                      icon: Icon(Icons.chevron_left_rounded),
-                    ),
-                    IconButton(
-                      tooltip: "next (Right arrow)",
-                      onPressed: widget.onNext,
-                      icon: Icon(Icons.chevron_right_rounded),
-                    ),
-                    IconButton(
-                      tooltip: "Details",
-                      icon: Icon(Icons.info_outline_rounded),
-                      onPressed: () {},
-                    ),
-                    IconButton(
-                      tooltip: _isMonochrome
-                          ? "View in color (B)"
-                          : "View in monochrome (B)",
-                      isSelected: _isMonochrome,
-                      onPressed: () {
-                        setState(() {
-                          _isMonochrome = !_isMonochrome;
-                        });
-                      },
-                      icon: Icon(Icons.filter_b_and_w_outlined),
-                      selectedIcon: Icon(Icons.filter_b_and_w),
-                    ),
-                  ],
-                ),
-              ],
+                  PinnableFloatingToolbar(
+                    isPinned: _pinControls,
+                    onTogglePin: () {
+                      setState(() {
+                        _pinControls = !_pinControls;
+                      });
+                    },
+                    children: [
+                      IconButton(
+                        tooltip: "previous (Left arrow)",
+                        onPressed: widget.onPrevious,
+                        icon: Icon(Icons.chevron_left_rounded),
+                      ),
+                      IconButton(
+                        tooltip: "next (Right arrow)",
+                        onPressed: widget.onNext,
+                        icon: Icon(Icons.chevron_right_rounded),
+                      ),
+                      IconButton(
+                        tooltip: "Details",
+                        icon: Icon(Icons.info_outline_rounded),
+                        onPressed: () {},
+                      ),
+                      IconButton(
+                        tooltip: _isMonochrome
+                            ? "View in color (B)"
+                            : "View in monochrome (B)",
+                        isSelected: _isMonochrome,
+                        onPressed: () {
+                          setState(() {
+                            _isMonochrome = !_isMonochrome;
+                          });
+                        },
+                        icon: Icon(Icons.filter_b_and_w_outlined),
+                        selectedIcon: Icon(Icons.filter_b_and_w),
+                      ),
+                    ],
+                  ),
+                ],
+              )],
             ),
           ),
         ],
       ),
     );
   }
+
+  @override
+  void initState() {
+    tabBarController = TabController(length: 1, vsync: this);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    tabBarController.dispose();
+    super.dispose();
+  }
 }
 
-/// A pinnable/unpinnable version of the floating toolbar component of Material Design 3 Expressive. 
+/// A pinnable/unpinnable version of the floating toolbar component of Material Design 3 Expressive.
 ///
 /// This widget has a button that allows the container to be pinned (default) or unpinned.
 /// If the widget is unpinned, then it will slide down and out of view when the mouse is

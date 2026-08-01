@@ -61,19 +61,29 @@ class AppPageNavigator extends StatelessWidget {
   }
 }
 
-/// The header containing the gallery searchbar.
-class SearchBar extends StatelessWidget {
+
+// TODO: implement a provider for search and make this work.
+class SearchBar extends StatefulWidget {
   const SearchBar({super.key});
+
+  @override
+  State<SearchBar> createState() => _SearchBarState();
+}
+
+class _SearchBarState extends State<SearchBar> {
+  final controller = SearchController();
 
   @override
   Widget build(BuildContext context) {
     return SearchAnchor.bar(
+      shrinkWrap: true,
       barHintText: "Search in gallery",
       barElevation: WidgetStatePropertyAll(0.0),
       suggestionsBuilder: (context, controller) {
         return [
-          ListTile(title: Text("Placeholder 1")),
-          ListTile(title: Text("Placeholder 2")),
+          ListTile(title: Text("Placeholder 1"), onTap:() {
+            controller.closeView("Placeholder 1");
+          },),
         ];
       },
     );
