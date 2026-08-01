@@ -348,9 +348,9 @@ class _ImageAreaState extends State<ImageArea> {
             child: widget.isMonochrome
                 ? ColorFiltered(
                     colorFilter: grayscaleFilter,
-                    child: Image.file(widget.source, fit: .contain),
+                    child: Image.file(widget.source, gaplessPlayback: true, fit: .contain),
                   )
-                : Image.file(widget.source, fit: .contain),
+                : Image.file(widget.source, gaplessPlayback: true, fit: .contain),
           ),
         ),
       ),

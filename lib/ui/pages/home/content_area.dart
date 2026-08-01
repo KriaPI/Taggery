@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/model/gallery_entry.dart';
@@ -24,6 +26,8 @@ class ContentArea extends ConsumerStatefulWidget {
 class _ContentAreaState extends ConsumerState<ContentArea> {
   ContentAreaViewMode _viewMode = .gridExpanded;
   final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image viewer");
+  List<GalleryEntry>? galleryContents;
+  int galleryEntryCount = 0;
   int viewedIndex = 0;
 
   @override
@@ -37,8 +41,8 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
           key: _viewerKey,
           image: entry.source,
           name: entry.name,
-          onPrevious: () => previous(data.length - 1),
-          onNext: () => next(data.length - 1),
+          onPrevious: () => previous(),
+          onNext: () => next(),
           onClose: closeViewer,
           onExpandOrMinimize: expandOrMinimizeViewer,
           isExpanded: _viewMode == .viewerExpanded,
@@ -69,11 +73,16 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
           const ContentFilters(),
           Expanded(
             child: gallery.when(
-              data: (data) => MediaGrid(
-                key: PageStorageKey("Gallery grid scroll extent"),
-                onSelect: openViewer,
-                data: data as List<GalleryEntry>,
-              ),
+              data: (data) {
+                // This update is required for the viewer to work.
+                galleryContents = data as List<GalleryEntry>;
+                galleryEntryCount = data.length;
+                return MediaGrid(
+                  key: PageStorageKey("Gallery grid scroll extent"),
+                  onSelect: openViewer,
+                  data: data,
+                );
+              },
               loading: () => Center(child: CircularProgressIndicator()),
               error: (error, stackTrace) => Column(
                 crossAxisAlignment: .center,
@@ -129,17 +138,41 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
       assert(false);
     }
   }
+  
+  /// Assumes the boundaries are [0, length - 1].
+  int getPreviousIndex(int current, int length) {
+    return current != 0 ? current - 1 : length - 1;
+  }
 
-  void previous(int lastIndex) {
-    int newIndex = viewedIndex != 0 ? viewedIndex - 1 : lastIndex;
+  /// Assumes the boundaries are [0, length].
+  int getNextIndex(int current, int length) {
+    return current != length - 1 ? current + 1 : 0;
+  }
+
+  void previous() {
+    int newIndex = getPreviousIndex(viewedIndex, galleryEntryCount);
+
+    // Precache the image before the image at newIndex.
+    if (galleryContents != null) {
+      final int previousIndex = getPreviousIndex(newIndex, galleryEntryCount);
+      final File next = galleryContents![previousIndex].source;
+      precacheImage(FileImage(next), context);
+    }
 
     setState(() {
       viewedIndex = newIndex;
     });
   }
 
-  void next(int lastIndex) {
-    int newIndex = viewedIndex != lastIndex ? viewedIndex + 1 : 0;
+  void next() {
+    int newIndex = getNextIndex(viewedIndex, galleryEntryCount);
+    
+    // Precache the image after the image at newIndex. 
+    if (galleryContents != null) {
+      final int nextIndex = getNextIndex(newIndex, galleryEntryCount);
+      final File next = galleryContents![nextIndex].source;
+      precacheImage(FileImage(next), context);
+    }
 
     setState(() {
       viewedIndex = newIndex;
