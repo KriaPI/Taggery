@@ -118,6 +118,11 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   }
 
   void openViewer(int index) {
+    if (galleryContents != null) {
+      final File toOpen = galleryContents![index].source;
+      precacheImage(FileImage(toOpen), context);
+    }
+
     setState(() {
       viewedIndex = index;
       _viewMode = .splitView;
