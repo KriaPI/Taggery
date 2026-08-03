@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/model/gallery_entry.dart';
 import 'package:taggery/providers/gallery.dart';
+import 'package:taggery/providers/viewer_tabs.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/pages/home/content_filters.dart';
 import 'package:taggery/ui/pages/home/media_grid.dart';
@@ -24,12 +25,12 @@ class ContentArea extends ConsumerStatefulWidget {
 }
 
 class _ContentAreaState extends ConsumerState<ContentArea> {
-  ContentAreaViewMode _viewMode = .gridExpanded;
   final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image viewer");
+  ContentAreaViewMode _viewMode = .gridExpanded;
+  int primaryTabIndex = 0;
   List<GalleryEntry>? galleryContents;
   int galleryEntryCount = 0;
-  int viewedIndex = 0;
-  // Contains the indices to images that have been opened in tabs in the image viewer.
+
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +41,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
         return ImageViewerContainer(
           key: _viewerKey,
           isExpanded: _viewMode == .viewerExpanded,
-          gallery: data as List<GalleryEntry>,
-          initiallyOpenedIndex: viewedIndex,
+          primaryTab: data[primaryTabIndex],
           onPrevious: () => previous(),
           onNext: () => next(),
           onClose: closeViewer,
@@ -79,7 +79,8 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
                 galleryEntryCount = data.length;
                 return MediaGrid(
                   key: PageStorageKey("Gallery grid scroll extent"),
-                  onSelect: open,
+                  // TODO: change back to open
+                  onSelect: openInTab,
                   gallery: data,
                 );
               },
@@ -125,7 +126,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
     }
 
     setState(() {
-      viewedIndex = index;
+      primaryTabIndex = index;
       _viewMode = .splitView;
     });
   }
@@ -133,14 +134,14 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   /// Open the image at [index] as a tab in the viewer.
   void openInTab(int index) {
     if (galleryContents != null) {
-      final File toOpen = galleryContents![index].source;
-      precacheImage(FileImage(toOpen), context);
+      final newTab = galleryContents![index];
+      ref.read(viewerTabsNotifierProvider.notifier).openTab(newTab);
+      // TODO: consider if this should be precached.
+      precacheImage(FileImage(newTab.source), context);
     }
 
-    print("Opened in tab");
-
     setState(() {
-      viewedIndex = index;
+      primaryTabIndex = index;
       _viewMode = .splitView;
     });
   }
@@ -171,7 +172,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   }
 
   void previous() {
-    int newIndex = getPreviousIndex(viewedIndex, galleryEntryCount);
+    int newIndex = getPreviousIndex(primaryTabIndex, galleryEntryCount);
 
     // Precache the image before the image at newIndex.
     if (galleryContents != null) {
@@ -181,12 +182,12 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
     }
 
     setState(() {
-      viewedIndex = newIndex;
+      primaryTabIndex = newIndex;
     });
   }
 
   void next() {
-    int newIndex = getNextIndex(viewedIndex, galleryEntryCount);
+    int newIndex = getNextIndex(primaryTabIndex, galleryEntryCount);
     
     // Precache the image after the image at newIndex. 
     if (galleryContents != null) {
@@ -196,7 +197,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
     }
 
     setState(() {
-      viewedIndex = newIndex;
+      primaryTabIndex = newIndex;
     });
   }
 }
