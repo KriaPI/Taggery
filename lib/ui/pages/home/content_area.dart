@@ -37,7 +37,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
 
     final viewer = gallery.when(
       data: (data) {
-        return ImageViewer(
+        return ImageViewerContainer(
           key: _viewerKey,
           isExpanded: _viewMode == .viewerExpanded,
           gallery: data as List<GalleryEntry>,
