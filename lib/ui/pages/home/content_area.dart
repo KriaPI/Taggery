@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/model/gallery_entry.dart';
-import 'package:taggery/providers/gallery_provider.dart';
+import 'package:taggery/providers/gallery.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/pages/home/content_filters.dart';
 import 'package:taggery/ui/pages/home/media_grid.dart';

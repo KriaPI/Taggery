@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart';
 import 'package:taggery/data/file_system_interface.dart';
 import 'package:taggery/model/gallery_entry.dart';
-import 'package:taggery/providers/configuration_provider.dart';
+import 'package:taggery/providers/configuration.dart';
 
 Future<List<GalleryEntry>> loadGalleryFromFolder(String directoryPath) async {
   final images = loadImagesFromDirectory(directoryPath);

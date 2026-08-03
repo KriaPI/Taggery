@@ -41,10 +41,6 @@ class MediaGrid extends StatelessWidget {
               media: Image(
                 image: ResizeImage(
                   FileImage(entry.source),
-                  // TODO: retrieve the aspect ratio and divide the cell size with
-                  // the aspect ratio to get the length of the longest axis in pixels.
-                  // Use the aspect ratio to figure out which axis is the longest and
-                  // set a size for that axis only.
                   width: resolution.width <= resolution.height
                       ? itemResolution
                       : null,
