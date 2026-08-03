@@ -29,6 +29,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   List<GalleryEntry>? galleryContents;
   int galleryEntryCount = 0;
   int viewedIndex = 0;
+  // Contains the indices to images that have been opened in tabs in the image viewer.
 
   @override
   Widget build(BuildContext context) {
@@ -36,16 +37,15 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
 
     final viewer = gallery.when(
       data: (data) {
-        final entry = data[viewedIndex] as GalleryEntry;
         return ImageViewer(
           key: _viewerKey,
-          image: entry.source,
-          name: entry.name,
+          isExpanded: _viewMode == .viewerExpanded,
+          gallery: data as List<GalleryEntry>,
+          initiallyOpenedIndex: viewedIndex,
           onPrevious: () => previous(),
           onNext: () => next(),
           onClose: closeViewer,
           onExpandOrMinimize: expandOrMinimizeViewer,
-          isExpanded: _viewMode == .viewerExpanded,
         );
       },
       error: (_, _) => null,
@@ -79,8 +79,8 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
                 galleryEntryCount = data.length;
                 return MediaGrid(
                   key: PageStorageKey("Gallery grid scroll extent"),
-                  onSelect: openViewer,
-                  data: data,
+                  onSelect: open,
+                  gallery: data,
                 );
               },
               loading: () => Center(child: CircularProgressIndicator()),
@@ -117,11 +117,27 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
     });
   }
 
-  void openViewer(int index) {
+  /// Open the image at [index] in the viewer.
+  void open(int index) {
     if (galleryContents != null) {
       final File toOpen = galleryContents![index].source;
       precacheImage(FileImage(toOpen), context);
     }
+
+    setState(() {
+      viewedIndex = index;
+      _viewMode = .splitView;
+    });
+  }
+
+  /// Open the image at [index] as a tab in the viewer.
+  void openInTab(int index) {
+    if (galleryContents != null) {
+      final File toOpen = galleryContents![index].source;
+      precacheImage(FileImage(toOpen), context);
+    }
+
+    print("Opened in tab");
 
     setState(() {
       viewedIndex = index;

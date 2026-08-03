@@ -6,9 +6,9 @@ const int arbitraryMinimumCellSize = 300;
 
 // TODO: keep scrolling even if the widget changes dimensions.
 class MediaGrid extends StatelessWidget {
-  const MediaGrid({super.key, required this.onSelect, required this.data});
+  const MediaGrid({super.key, required this.onSelect, required this.gallery});
   final void Function(int index) onSelect;
-  final List<GalleryEntry> data;
+  final List<GalleryEntry> gallery;
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +28,9 @@ class MediaGrid extends StatelessWidget {
             // TODO: dynamically calculate the childaspectratio.
             childAspectRatio: 0.9,
           ),
-          itemCount: data.length,
+          itemCount: gallery.length,
           itemBuilder: (context, index) {
-            final GalleryEntry entry = data[index];
+            final GalleryEntry entry = gallery[index];
             final resolution = entry.resolution;
             final itemResolution =
                 ((arbitraryMinimumCellSize / resolution.aspectRatio) *
