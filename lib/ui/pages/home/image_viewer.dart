@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/model/gallery_entry.dart';
+import 'package:taggery/providers/viewer_tabs.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 
 const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
@@ -35,16 +37,14 @@ class ImageViewerContainer extends ConsumerStatefulWidget {
   const ImageViewerContainer({
     super.key,
     required this.isExpanded,
-    required this.gallery,
-    required this.initiallyOpenedIndex,
+    required this.primaryTab,
     required this.onPrevious,
     required this.onNext,
     required this.onClose,
     required this.onExpandOrMinimize,
   });
   final bool isExpanded;
-  final List<GalleryEntry> gallery;
-  final int initiallyOpenedIndex;
+  final GalleryEntry primaryTab;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
@@ -52,67 +52,114 @@ class ImageViewerContainer extends ConsumerStatefulWidget {
   final VoidCallback onExpandOrMinimize;
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => ImageViewerContainerState();
+  ConsumerState<ConsumerStatefulWidget> createState() =>
+      ImageViewerContainerState();
 }
 
-class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
-    with TickerProviderStateMixin {
-  late final TabController tabBarController;
-  List<ImageViewerTab> openTabs = [];
-
+class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
   @override
   Widget build(BuildContext context) {
-    final entry = widget.gallery[widget.initiallyOpenedIndex];
+    // TODO: disable shortcuts in tabs that are not the primary tab.
+    final Map<Type, Action<Intent>> viewerActions = {
+      PreviousIntent: CallbackAction<PreviousIntent>(
+        onInvoke: (intent) => widget.onPrevious(),
+      ),
+      NextIntent: CallbackAction<NextIntent>(
+        onInvoke: (intent) => widget.onNext(),
+      ),
+      CloseIntent: CallbackAction<CloseIntent>(
+        onInvoke: (intent) => widget.onClose(),
+      ),
+    };
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: Icon(Icons.close_rounded),
-              onPressed: widget.onClose,
-              tooltip: "Close",
-            ),
-            Expanded(
-              child: TabBar(
-                tabs: [Tab(text: entry.name)],
-                controller: tabBarController,
-              ),
-            ),
-            widget.isExpanded
-                ? IconButton(
-                    onPressed: widget.onExpandOrMinimize,
-                    icon: Icon(Icons.close_fullscreen_rounded),
-                    tooltip: "Minimize",
-                  )
-                : IconButton(
-                    onPressed: widget.onExpandOrMinimize,
-                    icon: Icon(Icons.open_in_full_rounded),
-                    tooltip: "Maximize",
+    final tabs = ref.watch(viewerTabsNotifierProvider);
+
+    return Actions(
+      actions: viewerActions,
+      child: Focus(
+        autofocus: true,
+        child: DefaultTabController(
+          animationDuration: Durations.short2,
+          key: ValueKey(tabs.length),
+          length: tabs.length + 1,
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.close_rounded),
+                    onPressed: widget.onClose,
+                    tooltip: "Close",
                   ),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: tabBarController,
-            children: [ImageViewerTab(entry: entry, onPrevious: widget.onPrevious, onNext: widget.onNext, onClose: widget.onClose)] + openTabs,
+                  Expanded(
+                    child: TabBar(
+                      isScrollable: true,
+                      tabs: [
+                        Tab(key: ValueKey(0), text: widget.primaryTab.name),
+                        ...tabs.mapIndexed(
+                          (index, entry) => Tab(
+                            key: ValueKey(index + 1),
+                            child: Row(
+                              children: [
+                                Text(entry.name),
+                                IconButton(
+                                  onPressed: () {
+                                    ref
+                                        .read(
+                                          viewerTabsNotifierProvider.notifier,
+                                        )
+                                        .closeTab(index);
+                                  },
+                                  icon: Icon(Icons.close),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  widget.isExpanded
+                      ? IconButton(
+                          onPressed: widget.onExpandOrMinimize,
+                          icon: Icon(Icons.close_fullscreen_rounded),
+                          tooltip: "Minimize",
+                        )
+                      : IconButton(
+                          onPressed: widget.onExpandOrMinimize,
+                          icon: Icon(Icons.open_in_full_rounded),
+                          tooltip: "Maximize",
+                        ),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    ImageViewerTab(
+                      entry: widget.primaryTab,
+                      onPrevious: widget.onPrevious,
+                      onNext: widget.onNext,
+                      onClose: widget.onClose,
+                    ),
+                    ...tabs.map(
+                      (galleryEntry) => ImageViewerTab(
+                        entry: galleryEntry,
+                        onPrevious: widget.onPrevious,
+                        onNext: widget.onNext,
+                        onClose: widget.onClose,
+                        disableNavigation: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
-  }
-
-  @override
-  void initState() {
-    tabBarController = TabController(length: openTabs.length + 1, vsync: this);
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    tabBarController.dispose();
-    super.dispose();
   }
 }
 
@@ -124,61 +171,38 @@ class ImageViewerTab extends StatefulWidget {
     required this.onPrevious,
     required this.onNext,
     required this.onClose,
+    this.disableNavigation = false,
   });
   final GalleryEntry entry;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
+  final bool disableNavigation;
   //final Function(int index) onCloseTab;
-  
+
   @override
   State<ImageViewerTab> createState() => _ImageViewerTabState();
 }
 
 class _ImageViewerTabState extends State<ImageViewerTab> {
-  
-
   bool _pinControls = true;
   bool _isMonochrome = false;
 
   @override
   Widget build(BuildContext context) {
-    final Map<Type, Action<Intent>> viewerTabActions = {
-      PreviousIntent: CallbackAction<PreviousIntent>(
-        onInvoke: (intent) => widget.onPrevious(),
-      ),
-      NextIntent: CallbackAction<NextIntent>(
-        onInvoke: (intent) => widget.onNext(),
-      ),
-      ToggleMonochromeFilterIntent:
-          CallbackAction<ToggleMonochromeFilterIntent>(
-            onInvoke: (intent) => setState(() {
-              _isMonochrome = !_isMonochrome;
-            }),
-      ),
-      CloseIntent: CallbackAction<CloseIntent>(
-        onInvoke: (intent) => widget.onClose(),
-      ),
-    };
-
-    return Actions(
-      actions: viewerTabActions,
-      child: Stack(
-        alignment: .bottomCenter,
-        children: [
-          // This focus widget is needed to allow keyboard events to propagate up.
-          Focus(
-            autofocus: true,
-            child: ImageArea(source: widget.entry.source, isMonochrome: _isMonochrome),
-          ),
-          PinnableFloatingToolbar(
-            isPinned: _pinControls,
-            onTogglePin: () {
-              setState(() {
-                _pinControls = !_pinControls;
-              });
-            },
-            children: [
+    return Stack(
+      alignment: .bottomCenter,
+      children: [
+        ImageArea(source: widget.entry.source, isMonochrome: _isMonochrome),
+        PinnableFloatingToolbar(
+          isPinned: _pinControls,
+          onTogglePin: () {
+            setState(() {
+              _pinControls = !_pinControls;
+            });
+          },
+          children: [
+            if (widget.disableNavigation == false) ...[
               IconButton(
                 tooltip: "previous (Left arrow)",
                 onPressed: widget.onPrevious,
@@ -189,28 +213,26 @@ class _ImageViewerTabState extends State<ImageViewerTab> {
                 onPressed: widget.onNext,
                 icon: Icon(Icons.chevron_right_rounded),
               ),
-              IconButton(
-                tooltip: "Details",
-                icon: Icon(Icons.info_outline_rounded),
-                onPressed: () {},
-              ),
-              IconButton(
-                tooltip: _isMonochrome
-                    ? "View in color (B)"
-                    : "View in monochrome (B)",
-                isSelected: _isMonochrome,
-                onPressed: () {
-                  setState(() {
-                    _isMonochrome = !_isMonochrome;
-                  });
-                },
-                icon: Icon(Icons.filter_b_and_w_outlined),
-                selectedIcon: Icon(Icons.filter_b_and_w),
-              ),
             ],
-          ),
-        ],
-      ),
+            IconButton(
+              tooltip: "Details",
+              icon: Icon(Icons.info_outline_rounded),
+              onPressed: () {},
+            ),
+            IconButton(
+              tooltip: _isMonochrome ? "View in color" : "View in monochrome",
+              isSelected: _isMonochrome,
+              onPressed: () {
+                setState(() {
+                  _isMonochrome = !_isMonochrome;
+                });
+              },
+              icon: Icon(Icons.filter_b_and_w_outlined),
+              selectedIcon: Icon(Icons.filter_b_and_w),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
