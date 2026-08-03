@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart';
 import 'package:taggery/data/file_system_interface.dart';
@@ -10,12 +11,21 @@ Future<List<GalleryEntry>> loadGalleryFromFolder(String directoryPath) async {
   List<GalleryEntry> gallery = [];
   await for (final image in images) {
     final lastModified = await image.lastModified();
-    gallery.add(GalleryEntry(source: image, name: basename(image.path), lastModified: lastModified, tags: ["cat", "animal", "creature adsdsadadadmaldmalkdamdlamdlamdlamd"]));
+
+    gallery.add(
+      GalleryEntry(
+        name: basename(image.path),
+        source: image,
+        // TODO: use something to get the size of an image.
+        resolution: Size(400, 400),
+        lastModified: lastModified,
+        tags: ["cat", "animal", "creature adsdsadadadmaldmalkdamdlamdlamdlamd"],
+      ),
+    );
   }
 
   return gallery;
 }
-
 
 final galleryProvider = FutureProvider((ref) async {
   final configuration = await ref.watch(configurationNotifierProvider.future);
