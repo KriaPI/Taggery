@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:taggery/model/gallery_entry.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 
 const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
@@ -27,9 +28,6 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 ]);
 
 
-// TODO: take multiple gallery entries instead of separate fields of one entry. The viewer must be able to keep a list of entries that have been opened. 
-// TODO: think of how the user should be able to open multiple images at once. 
-
 /// This widget allows the user to view an image.
 ///
 /// It additionally allows the user to show the previous and next image, view information about the image,
@@ -37,20 +35,21 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 class ImageViewer extends ConsumerStatefulWidget {
   const ImageViewer({
     super.key,
-    required this.image,
-    required this.name,
+    required this.isExpanded,
+    required this.gallery,
+    required this.initiallyOpenedIndex,
     required this.onPrevious,
     required this.onNext,
     required this.onClose,
     required this.onExpandOrMinimize,
-    required this.isExpanded,
   });
-  final File image;
-  final String name;
   final bool isExpanded;
+  final List<GalleryEntry> gallery;
+  final int initiallyOpenedIndex;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
+  //final Function(int index) onCloseTab;
   final VoidCallback onExpandOrMinimize;
 
   @override
@@ -82,6 +81,8 @@ class ImageViewerState extends ConsumerState<ImageViewer> with TickerProviderSta
       ),
     };
 
+    final entry = widget.gallery[widget.initiallyOpenedIndex];
+
     return Actions(
       actions: viewerActions,
       child: Column(
@@ -96,7 +97,7 @@ class ImageViewerState extends ConsumerState<ImageViewer> with TickerProviderSta
               ),
               Expanded(
                 child: TabBar(
-                      tabs: [Tab(text: widget.name)],
+                      tabs: [Tab(text: entry.name)],
                       controller: tabBarController,
                     ),
               ),
@@ -124,7 +125,7 @@ class ImageViewerState extends ConsumerState<ImageViewer> with TickerProviderSta
                   Focus(
                     autofocus: true,
                     child: ImageArea(
-                      source: widget.image,
+                      source: entry.source,
                       isMonochrome: _isMonochrome,
                     ),
                   ),
