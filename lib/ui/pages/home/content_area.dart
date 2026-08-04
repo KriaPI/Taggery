@@ -31,7 +31,6 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   List<GalleryEntry>? galleryContents;
   int galleryEntryCount = 0;
 
-
   @override
   Widget build(BuildContext context) {
     final gallery = ref.watch(galleryProvider);
@@ -139,10 +138,12 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
       precacheImage(FileImage(newTab.source), context);
     }
 
-    setState(() {
-      primaryTabIndex = index;
-      _viewMode = .splitView;
-    });
+    if (_viewMode != ContentAreaViewMode.splitView) {
+      setState(() {
+        primaryTabIndex = index;
+        _viewMode = .splitView;
+      });
+    }
   }
 
   void expandOrMinimizeViewer() {
@@ -159,7 +160,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
       assert(false);
     }
   }
-  
+
   /// Assumes the boundaries are [0, length - 1].
   int getPreviousIndex(int current, int length) {
     return current != 0 ? current - 1 : length - 1;
@@ -187,8 +188,8 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
 
   void next() {
     int newIndex = getNextIndex(primaryTabIndex, galleryEntryCount);
-    
-    // Precache the image after the image at newIndex. 
+
+    // Precache the image after the image at newIndex.
     if (galleryContents != null) {
       final int nextIndex = getNextIndex(newIndex, galleryEntryCount);
       final File next = galleryContents![nextIndex].source;
