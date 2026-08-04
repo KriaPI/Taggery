@@ -29,6 +29,8 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0,
 ]);
 
+// TODO: refactor all classes (extract into new widgets and methods if needed) and document them. 
+
 /// This widget allows the user to view an image.
 ///
 /// It additionally allows the user to show the previous and next image, view information about the image,
@@ -137,14 +139,14 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
                 child: TabBarView(
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
-                    ImageViewerTab(
+                    ImageViewerTabView(
                       entry: widget.primaryTab,
                       onPrevious: widget.onPrevious,
                       onNext: widget.onNext,
                       onClose: widget.onClose,
                     ),
                     ...tabs.mapIndexed(
-                      (index, galleryEntry) => ImageViewerTab(
+                      (index, galleryEntry) => ImageViewerTabView(
                         entry: galleryEntry,
                         onPrevious: widget.onPrevious,
                         onNext: widget.onNext,
@@ -164,8 +166,8 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
 }
 
 /// A single tab within the image viewer.
-class ImageViewerTab extends StatefulWidget {
-  const ImageViewerTab({
+class ImageViewerTabView extends StatefulWidget {
+  const ImageViewerTabView({
     super.key,
     required this.entry,
     required this.onPrevious,
@@ -181,10 +183,10 @@ class ImageViewerTab extends StatefulWidget {
   //final Function(int index) onCloseTab;
 
   @override
-  State<ImageViewerTab> createState() => _ImageViewerTabState();
+  State<ImageViewerTabView> createState() => _ImageViewerTabViewState();
 }
 
-class _ImageViewerTabState extends State<ImageViewerTab> {
+class _ImageViewerTabViewState extends State<ImageViewerTabView> {
   bool _pinControls = true;
   bool _isMonochrome = false;
 

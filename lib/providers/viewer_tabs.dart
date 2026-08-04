@@ -9,7 +9,7 @@ class ViewerTabsNotifier extends Notifier<List<GalleryEntry>> {
 
   /// Add a new tab with [tabContent] to the list of tabs.
   void openTab(GalleryEntry tabContent) {
-    state = [...state, tabContent];
+    state = [tabContent, ...state];
   }
 
   /// Remove the tab at [index] within the list. Assumes that the index exists.
