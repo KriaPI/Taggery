@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:taggery/model/gallery_entry.dart';
 
 // TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that §ould be displayed at most when the app is in fullscreen and does not have the viewer open).
@@ -6,8 +7,14 @@ const int arbitraryMinimumCellSize = 300;
 
 // TODO: keep scrolling even if the widget changes dimensions.
 class MediaGrid extends StatelessWidget {
-  const MediaGrid({super.key, required this.onSelect, required this.gallery});
+  const MediaGrid({
+    super.key,
+    required this.onSelect,
+    required this.onSelectTab,
+    required this.gallery,
+  });
   final void Function(int index) onSelect;
+  final void Function(int index) onSelectTab;
   final List<GalleryEntry> gallery;
 
   @override
@@ -54,6 +61,7 @@ class MediaGrid extends StatelessWidget {
               ),
               index: index,
               onTap: onSelect,
+              onTapShift: onSelectTab,
               tags: entry.tags,
             );
           },
@@ -63,12 +71,15 @@ class MediaGrid extends StatelessWidget {
   }
 }
 
+// TODO: add menu when right clicking
+
 class ImageTile extends StatefulWidget {
   const ImageTile({
     super.key,
     required this.media,
     required this.index,
     required this.onTap,
+    required this.onTapShift,
     this.tags = const [],
   });
 
@@ -76,12 +87,14 @@ class ImageTile extends StatefulWidget {
     super.key,
     required this.index,
     required this.onTap,
+    required this.onTapShift,
     this.tags = const [],
   }) : media = Icon(Icons.image);
 
   final Widget media;
   final int index;
   final void Function(int index) onTap;
+  final void Function(int index) onTapShift;
   final List<String> tags;
 
   @override
@@ -111,7 +124,13 @@ class _ImageTileState extends State<ImageTile> {
     );
 
     return GestureDetector(
-      onTap: () => widget.onTap(widget.index),
+      onTap: () {
+        if (HardwareKeyboard.instance.isShiftPressed) {
+          widget.onTapShift(widget.index);
+        } else {
+          widget.onTap(widget.index);
+        }
+      },
       child: MouseRegion(
         onEnter: (_) => setState(() {
           isHoveredOver = true;

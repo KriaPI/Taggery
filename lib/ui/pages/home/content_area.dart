@@ -79,8 +79,8 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
                 galleryEntryCount = data.length;
                 return MediaGrid(
                   key: PageStorageKey("Gallery grid scroll extent"),
-                  // TODO: change back to open
-                  onSelect: openInTab,
+                  onSelect: open,
+                  onSelectTab: openInTab,
                   gallery: data,
                 );
               },
@@ -136,7 +136,6 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
     if (galleryContents != null) {
       final newTab = galleryContents![index];
       ref.read(viewerTabsNotifierProvider.notifier).openTab(newTab);
-      // TODO: consider if this should be precached.
       precacheImage(FileImage(newTab.source), context);
     }
 

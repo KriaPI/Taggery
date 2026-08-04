@@ -96,10 +96,9 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
                     child: TabBar(
                       isScrollable: true,
                       tabs: [
-                        Tab(key: ValueKey(0), text: widget.primaryTab.name),
+                        Tab(text: widget.primaryTab.name),
                         ...tabs.mapIndexed(
                           (index, entry) => Tab(
-                            key: ValueKey(index + 1),
                             child: Row(
                               children: [
                                 Text(entry.name),
@@ -134,6 +133,7 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
                 ],
               ),
               Expanded(
+                // TODO: make tabs keep their state (state dissapears when the user moves between tabs)
                 child: TabBarView(
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
@@ -143,8 +143,8 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
                       onNext: widget.onNext,
                       onClose: widget.onClose,
                     ),
-                    ...tabs.map(
-                      (galleryEntry) => ImageViewerTab(
+                    ...tabs.mapIndexed(
+                      (index, galleryEntry) => ImageViewerTab(
                         entry: galleryEntry,
                         onPrevious: widget.onPrevious,
                         onNext: widget.onNext,
