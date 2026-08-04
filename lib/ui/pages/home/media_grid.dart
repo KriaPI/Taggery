@@ -71,7 +71,7 @@ class MediaGrid extends StatelessWidget {
   }
 }
 
-// TODO: add menu when right clicking
+// TODO: add a context menu when right clicking on an imagetile
 
 class ImageTile extends StatefulWidget {
   const ImageTile({
