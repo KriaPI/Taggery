@@ -29,27 +29,33 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0,
 ]);
 
-/// This widget allows the user to view an image.
+
+/// This widget contains the header for the viewer and the viewer itself as a child.
 ///
-/// It additionally allows the user to show the previous and next image, view information about the image,
-/// and show it in black-and-white (monochrome).
+/// The header includes the close button, the tab bar, and the maximize/minimize button. This widget manages
+/// the state of the tabs and shortcuts map.
+///
 class ImageViewerContainer extends ConsumerStatefulWidget {
   const ImageViewerContainer({
     super.key,
-    required this.isExpanded,
+    required this.isInFullview,
     required this.primaryTab,
     required this.onPrevious,
     required this.onNext,
     required this.onClose,
-    required this.onExpandOrMinimize,
+    required this.onToggleFullview,
   });
-  final bool isExpanded;
+
+  final bool isInFullview;
+
+  /// The tab shown when first opening the viewer.
   final GalleryEntry primaryTab;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
-  //final Function(int index) onCloseTab;
-  final VoidCallback onExpandOrMinimize;
+
+  /// The callback that should be called to turn on full view of the viewer and turn of split view between the viewer and gallery grid, and vice versa.
+  final VoidCallback onToggleFullview;
 
   @override
   ConsumerState<ConsumerStatefulWidget> createState() =>
@@ -60,8 +66,15 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
     with TickerProviderStateMixin {
   late ProviderSubscription<List<GalleryEntry>> _tabsProvider;
   late TabController _tabController;
+
+  /// The map of callbacks called to execute keyboard shortcuts.
   late Map<Type, Action<Intent>> viewerActions;
+
+  /// Whether or not the controls for the viewer should be shown at all times, or only shown when the user hovers over
+  /// the space they normally occupy.
   bool _pinControls = true;
+
+  /// True if the viewer's media content should be should in black-and-white.
   bool _isMonochrome = false;
 
   @override
@@ -85,6 +98,7 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
                 Expanded(
                   child: TabBar(
                     controller: _tabController,
+                    tabAlignment: .center,
                     isScrollable: true,
                     tabs: [
                       Tab(text: widget.primaryTab.name),
@@ -108,14 +122,14 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
                     ],
                   ),
                 ),
-                widget.isExpanded
+                widget.isInFullview
                     ? IconButton(
-                        onPressed: widget.onExpandOrMinimize,
+                        onPressed: widget.onToggleFullview,
                         icon: Icon(Icons.close_fullscreen_rounded),
                         tooltip: "Minimize",
                       )
                     : IconButton(
-                        onPressed: widget.onExpandOrMinimize,
+                        onPressed: widget.onToggleFullview,
                         icon: Icon(Icons.open_in_full_rounded),
                         tooltip: "Maximize",
                       ),
@@ -157,7 +171,7 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
 
     int tabCount = ref.read(viewerTabsNotifierProvider).length;
     _tabController = TabController(length: tabCount + 1, vsync: this);
-    _tabController.addListener(updateShortCuts);
+    _tabController.addListener(_updateShortCuts);
     _tabsProvider = ref.listenManual(viewerTabsNotifierProvider, (
       previous,
       next,
@@ -169,13 +183,15 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
 
   @override
   void dispose() {
-    _tabController.removeListener(updateShortCuts);
+    _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
     _tabsProvider.close();
     super.dispose();
   }
 
-  void updateShortCuts() {
+  /// Update the map of shortcut actions. Disables the left and right arrow actions
+  /// if the any other tab than the first is being viewed.
+  void _updateShortCuts() {
     final newViewerActions = {
       if (_tabController.index == 0) ...{
         PreviousIntent: CallbackAction<PreviousIntent>(
@@ -233,7 +249,8 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
   }
 }
 
-class ImageViewer extends StatelessWidget {
+/// The widget containing the image and the media controls.
+class ImageViewer extends StatefulWidget {
   const ImageViewer({
     super.key,
     required this.primaryTab,
@@ -259,36 +276,41 @@ class ImageViewer extends StatelessWidget {
   final bool showMonochrome;
 
   @override
+  State<ImageViewer> createState() => _ImageViewerState();
+}
+
+class _ImageViewerState extends State<ImageViewer> {
+  @override
   Widget build(BuildContext context) {
     return Stack(
       alignment: .bottomCenter,
       children: [
         TabBarView(
-          controller: tabController,
+          controller: widget.tabController,
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            ImageArea(source: primaryTab.source, isMonochrome: showMonochrome),
-            ...otherTabs.mapIndexed(
+            ImageArea(source: widget.primaryTab.source, isMonochrome: widget.showMonochrome),
+            ...widget.otherTabs.mapIndexed(
               (index, galleryEntry) => ImageArea(
                 source: galleryEntry.source,
-                isMonochrome: showMonochrome,
+                isMonochrome: widget.showMonochrome,
               ),
             ),
           ],
         ),
         PinnableFloatingToolbar(
-          isPinned: areControlsPinned,
-          onTogglePin: onTogglePinControls,
+          isPinned: widget.areControlsPinned,
+          onTogglePin: widget.onTogglePinControls,
           children: [
-            if (tabController.index == 0) ...[
+            if (widget.tabController.index == 0) ...[
               IconButton(
                 tooltip: "previous (Left arrow)",
-                onPressed: onPrevious,
+                onPressed: widget.onPrevious,
                 icon: Icon(Icons.chevron_left_rounded),
               ),
               IconButton(
                 tooltip: "next (Right arrow)",
-                onPressed: onNext,
+                onPressed: widget.onNext,
                 icon: Icon(Icons.chevron_right_rounded),
               ),
             ],
@@ -298,9 +320,9 @@ class ImageViewer extends StatelessWidget {
               onPressed: () {},
             ),
             IconButton(
-              tooltip: showMonochrome ? "View in color" : "View in monochrome",
-              isSelected: showMonochrome,
-              onPressed: onToggleMonochrome,
+              tooltip: widget.showMonochrome ? "View in color" : "View in monochrome",
+              isSelected: widget.showMonochrome,
+              onPressed: widget.onToggleMonochrome,
               icon: Icon(Icons.filter_b_and_w_outlined),
               selectedIcon: Icon(Icons.filter_b_and_w),
             ),
@@ -309,6 +331,35 @@ class ImageViewer extends StatelessWidget {
       ],
     );
   }
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to tab selection changes to rebuild the toolbar immediately.
+    widget.tabController.addListener(_handleTabSelection);
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Handle tabController replacements when length changes in parent.
+    if (oldWidget.tabController != widget.tabController) {
+      oldWidget.tabController.removeListener(_handleTabSelection);
+      widget.tabController.addListener(_handleTabSelection);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.tabController.removeListener(_handleTabSelection);
+    super.dispose();
+  }
+
+  void _handleTabSelection() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 }
 
 /// A pinnable/unpinnable version of the floating toolbar component of Material Design 3 Expressive.
@@ -316,11 +367,6 @@ class ImageViewer extends StatelessWidget {
 /// This widget has a button that allows the container to be pinned (default) or unpinned.
 /// If the widget is unpinned, then it will slide down and out of view when the mouse is
 /// not in its region.
-///
-/// [isPinned] decides whether or not this widget should be pinned. This state should be stored in an attribute
-/// belonging to the parent.
-/// [onTogglePin] should be a callback to a function that assigns a new value to the parent's attribute that [isPinned] derives its value from.
-/// [children] are arranged to the sides of the pin button.
 class PinnableFloatingToolbar extends StatefulWidget {
   const PinnableFloatingToolbar({
     super.key,
@@ -328,8 +374,15 @@ class PinnableFloatingToolbar extends StatefulWidget {
     required this.onTogglePin,
     required this.children,
   });
+
+  /// Decides whether or not this widget should be pinned. This state should be stored in an attribute belonging to a parent widget.
   final bool isPinned;
+
+  /// The callback to call when the assigning a new value to the parent's attribute that [isPinned] derives its value from.
   final VoidCallback onTogglePin;
+
+  /// Widgets that should be placed to either side of the pin button. The widgets of the first half of the list will be
+  /// placed to the left of the pin button, and those of the second half will be placed to the right.
   final List<Widget> children;
 
   @override
@@ -410,8 +463,6 @@ class PinnableFloatingToolbarState extends State<PinnableFloatingToolbar> {
 }
 
 /// A widget that allows for panning, zooming, and applying a monochrome filter on an image.
-///
-/// [source] is the image's file.
 class ImageArea extends StatefulWidget {
   const ImageArea({
     super.key,

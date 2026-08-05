@@ -39,12 +39,12 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
       data: (data) {
         return ImageViewerContainer(
           key: _viewerKey,
-          isExpanded: _viewMode == .viewerExpanded,
+          isInFullview: _viewMode == .viewerExpanded,
           primaryTab: data[primaryTabIndex],
           onPrevious: () => previous(),
           onNext: () => next(),
           onClose: closeViewer,
-          onExpandOrMinimize: expandOrMinimizeViewer,
+          onToggleFullview: expandOrMinimizeViewer,
         );
       },
       error: (_, _) => null,
