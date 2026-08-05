@@ -29,8 +29,6 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0,
 ]);
 
-// TODO: refactor all classes (extract into new widgets and methods if needed) and document them. 
-
 /// This widget allows the user to view an image.
 ///
 /// It additionally allows the user to show the previous and next image, view information about the image,
@@ -58,11 +56,94 @@ class ImageViewerContainer extends ConsumerStatefulWidget {
       ImageViewerContainerState();
 }
 
-class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
+class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
+    with TickerProviderStateMixin {
+  late ProviderSubscription<List<GalleryEntry>> _tabsProvider;
+  late TabController _tabController;
+  late Map<Type, Action<Intent>> viewerActions;
+  bool _pinControls = true;
+  bool _isMonochrome = false;
+
   @override
   Widget build(BuildContext context) {
-    // TODO: disable shortcuts in tabs that are not the primary tab.
-    final Map<Type, Action<Intent>> viewerActions = {
+    final tabs = ref.watch(viewerTabsNotifierProvider);
+
+    return Actions(
+      actions: viewerActions,
+      child: Focus(
+        autofocus: true,
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.close_rounded),
+                  onPressed: widget.onClose,
+                  tooltip: "Close",
+                ),
+                Expanded(
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabs: [
+                      Tab(text: widget.primaryTab.name),
+                      ...tabs.mapIndexed(
+                        (index, entry) => Tab(
+                          child: Row(
+                            children: [
+                              Text(entry.name),
+                              IconButton(
+                                onPressed: () {
+                                  ref
+                                      .read(viewerTabsNotifierProvider.notifier)
+                                      .closeTab(index);
+                                },
+                                icon: Icon(Icons.close),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                widget.isExpanded
+                    ? IconButton(
+                        onPressed: widget.onExpandOrMinimize,
+                        icon: Icon(Icons.close_fullscreen_rounded),
+                        tooltip: "Minimize",
+                      )
+                    : IconButton(
+                        onPressed: widget.onExpandOrMinimize,
+                        icon: Icon(Icons.open_in_full_rounded),
+                        tooltip: "Maximize",
+                      ),
+              ],
+            ),
+            Expanded(
+              child: ImageViewer(
+                primaryTab: widget.primaryTab,
+                otherTabs: tabs,
+                tabController: _tabController,
+                onPrevious: widget.onPrevious,
+                onNext: widget.onNext,
+                onClose: widget.onClose,
+                onTogglePinControls: togglePinControls,
+                onToggleMonochrome: toggleMonochrome,
+                areControlsPinned: _pinControls,
+                showMonochrome: _isMonochrome,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    viewerActions = {
       PreviousIntent: CallbackAction<PreviousIntent>(
         onInvoke: (intent) => widget.onPrevious(),
       ),
@@ -74,145 +155,140 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer> {
       ),
     };
 
-    final tabs = ref.watch(viewerTabsNotifierProvider);
+    int tabCount = ref.read(viewerTabsNotifierProvider).length;
+    _tabController = TabController(length: tabCount + 1, vsync: this);
+    _tabController.addListener(updateShortCuts);
+    _tabsProvider = ref.listenManual(viewerTabsNotifierProvider, (
+      previous,
+      next,
+    ) {
+      _updateTabController(next.length + 1);
+    });
+    super.initState();
+  }
 
-    return Actions(
-      actions: viewerActions,
-      child: Focus(
-        autofocus: true,
-        child: DefaultTabController(
-          animationDuration: Durations.short2,
-          key: ValueKey(tabs.length),
-          length: tabs.length + 1,
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.close_rounded),
-                    onPressed: widget.onClose,
-                    tooltip: "Close",
-                  ),
-                  Expanded(
-                    child: TabBar(
-                      isScrollable: true,
-                      tabs: [
-                        Tab(text: widget.primaryTab.name),
-                        ...tabs.mapIndexed(
-                          (index, entry) => Tab(
-                            child: Row(
-                              children: [
-                                Text(entry.name),
-                                IconButton(
-                                  onPressed: () {
-                                    ref
-                                        .read(
-                                          viewerTabsNotifierProvider.notifier,
-                                        )
-                                        .closeTab(index);
-                                  },
-                                  icon: Icon(Icons.close),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  widget.isExpanded
-                      ? IconButton(
-                          onPressed: widget.onExpandOrMinimize,
-                          icon: Icon(Icons.close_fullscreen_rounded),
-                          tooltip: "Minimize",
-                        )
-                      : IconButton(
-                          onPressed: widget.onExpandOrMinimize,
-                          icon: Icon(Icons.open_in_full_rounded),
-                          tooltip: "Maximize",
-                        ),
-                ],
-              ),
-              Expanded(
-                // TODO: make tabs keep their state (state dissapears when the user moves between tabs)
-                child: TabBarView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    ImageViewerTabView(
-                      entry: widget.primaryTab,
-                      onPrevious: widget.onPrevious,
-                      onNext: widget.onNext,
-                      onClose: widget.onClose,
-                    ),
-                    ...tabs.mapIndexed(
-                      (index, galleryEntry) => ImageViewerTabView(
-                        entry: galleryEntry,
-                        onPrevious: widget.onPrevious,
-                        onNext: widget.onNext,
-                        onClose: widget.onClose,
-                        disableNavigation: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  @override
+  void dispose() {
+    _tabController.removeListener(updateShortCuts);
+    _tabController.dispose();
+    _tabsProvider.close();
+    super.dispose();
+  }
+
+  void updateShortCuts() {
+    final newViewerActions = {
+      if (_tabController.index == 0) ...{
+        PreviousIntent: CallbackAction<PreviousIntent>(
+          onInvoke: (intent) => widget.onPrevious(),
         ),
+        NextIntent: CallbackAction<NextIntent>(
+          onInvoke: (intent) => widget.onNext(),
+        ),
+      },
+      CloseIntent: CallbackAction<CloseIntent>(
+        onInvoke: (intent) => widget.onClose(),
       ),
-    );
+    };
+
+    setState(() {
+      viewerActions = newViewerActions;
+    });
+  }
+
+  /// Calculate the index that the updated tab controller should set as its
+  /// initial index.
+  int _getUpdatedCurrentTabIndex(int newLength) {
+    int oldCurrentIndex = _tabController.index;
+
+    return oldCurrentIndex < newLength ? oldCurrentIndex : newLength - 1;
+  }
+
+  /// Update the length and currently viewed index of the tab controller.
+  void _updateTabController(int newLength) {
+    if (_tabController.length == newLength) return;
+
+    final newCurrentIndex = _getUpdatedCurrentTabIndex(newLength);
+    _tabController.dispose();
+
+    setState(() {
+      _tabController = TabController(
+        length: newLength,
+        vsync: this,
+        // Clamp index so it doesn't exceed bounds if tabs decrease.
+        initialIndex: newCurrentIndex,
+      );
+    });
+  }
+
+  void toggleMonochrome() {
+    setState(() {
+      _isMonochrome = !_isMonochrome;
+    });
+  }
+
+  void togglePinControls() {
+    setState(() {
+      _pinControls = !_pinControls;
+    });
   }
 }
 
-/// A single tab within the image viewer.
-class ImageViewerTabView extends StatefulWidget {
-  const ImageViewerTabView({
+class ImageViewer extends StatelessWidget {
+  const ImageViewer({
     super.key,
-    required this.entry,
+    required this.primaryTab,
+    required this.otherTabs,
+    required this.tabController,
     required this.onPrevious,
     required this.onNext,
     required this.onClose,
-    this.disableNavigation = false,
+    required this.onTogglePinControls,
+    required this.onToggleMonochrome,
+    required this.areControlsPinned,
+    required this.showMonochrome,
   });
-  final GalleryEntry entry;
+  final GalleryEntry primaryTab;
+  final List<GalleryEntry> otherTabs;
+  final TabController tabController;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
-  final bool disableNavigation;
-  //final Function(int index) onCloseTab;
-
-  @override
-  State<ImageViewerTabView> createState() => _ImageViewerTabViewState();
-}
-
-class _ImageViewerTabViewState extends State<ImageViewerTabView> {
-  bool _pinControls = true;
-  bool _isMonochrome = false;
+  final VoidCallback onTogglePinControls;
+  final VoidCallback onToggleMonochrome;
+  final bool areControlsPinned;
+  final bool showMonochrome;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       alignment: .bottomCenter,
       children: [
-        ImageArea(source: widget.entry.source, isMonochrome: _isMonochrome),
-        PinnableFloatingToolbar(
-          isPinned: _pinControls,
-          onTogglePin: () {
-            setState(() {
-              _pinControls = !_pinControls;
-            });
-          },
+        TabBarView(
+          controller: tabController,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
-            if (widget.disableNavigation == false) ...[
+            ImageArea(source: primaryTab.source, isMonochrome: showMonochrome),
+            ...otherTabs.mapIndexed(
+              (index, galleryEntry) => ImageArea(
+                source: galleryEntry.source,
+                isMonochrome: showMonochrome,
+              ),
+            ),
+          ],
+        ),
+        PinnableFloatingToolbar(
+          isPinned: areControlsPinned,
+          onTogglePin: onTogglePinControls,
+          children: [
+            if (tabController.index == 0) ...[
               IconButton(
                 tooltip: "previous (Left arrow)",
-                onPressed: widget.onPrevious,
+                onPressed: onPrevious,
                 icon: Icon(Icons.chevron_left_rounded),
               ),
               IconButton(
                 tooltip: "next (Right arrow)",
-                onPressed: widget.onNext,
+                onPressed: onNext,
                 icon: Icon(Icons.chevron_right_rounded),
               ),
             ],
@@ -222,13 +298,9 @@ class _ImageViewerTabViewState extends State<ImageViewerTabView> {
               onPressed: () {},
             ),
             IconButton(
-              tooltip: _isMonochrome ? "View in color" : "View in monochrome",
-              isSelected: _isMonochrome,
-              onPressed: () {
-                setState(() {
-                  _isMonochrome = !_isMonochrome;
-                });
-              },
+              tooltip: showMonochrome ? "View in color" : "View in monochrome",
+              isSelected: showMonochrome,
+              onPressed: onToggleMonochrome,
               icon: Icon(Icons.filter_b_and_w_outlined),
               selectedIcon: Icon(Icons.filter_b_and_w),
             ),
