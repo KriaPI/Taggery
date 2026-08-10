@@ -29,7 +29,6 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0,
 ]);
 
-
 /// This widget contains the header for the viewer and the viewer itself as a child.
 ///
 /// The header includes the close button, the tab bar, and the maximize/minimize button. This widget manages
@@ -86,6 +85,7 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
       child: Focus(
         autofocus: true,
         child: Column(
+          spacing: 4.0,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -96,30 +96,57 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
                   tooltip: "Close",
                 ),
                 Expanded(
-                  child: TabBar(
-                    controller: _tabController,
-                    tabAlignment: .center,
-                    isScrollable: true,
-                    tabs: [
-                      Tab(text: widget.primaryTab.name),
-                      ...tabs.mapIndexed(
-                        (index, entry) => Tab(
-                          child: Row(
-                            children: [
-                              Text(entry.name),
-                              IconButton(
-                                onPressed: () {
-                                  ref
-                                      .read(viewerTabsNotifierProvider.notifier)
-                                      .closeTab(index);
-                                },
-                                icon: Icon(Icons.close),
+                  // TODO: add dividers between tabs and extract tab into its own widget.
+                  child: SizedBox(
+                    height: 32,
+                    child: TabBar(
+                      controller: _tabController,
+                      tabAlignment: .center,
+                      isScrollable: true,
+                      dividerColor: Colors.transparent,
+                      indicator: BoxDecoration(
+                        borderRadius: .circular(8),
+                        color: Colors.black.withValues(alpha: 0.1)
+                      ),
+                      labelPadding: .fromLTRB(8, 0, 4, 0),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      splashFactory: NoSplash.splashFactory,
+                      overlayColor: WidgetStateProperty.fromMap({
+                        WidgetState.any: Colors.transparent
+                      }),
+                      tabs: [
+                        Tab(text: widget.primaryTab.name),
+                        ...tabs.mapIndexed(
+                          (index, entry) => Tab(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 280),
+                              child: Row(
+                                spacing: 4,
+                                crossAxisAlignment: .center,
+                                mainAxisSize: .min,
+                                children: [
+                                  Expanded(child: Text(entry.name, overflow: .fade, maxLines: 1, softWrap: false,)),
+                                  SizedBox(
+                                    width: 32,
+                                    height: 32,
+                                    child: IconButton(
+                                      iconSize: 20,
+                                      padding: .zero,
+                                      onPressed: () {
+                                        ref
+                                            .read(viewerTabsNotifierProvider.notifier)
+                                            .closeTab(index);
+                                      },
+                                      icon: Icon(Icons.close),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 widget.isInFullview
@@ -170,7 +197,7 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
     };
 
     int tabCount = ref.read(viewerTabsNotifierProvider).length;
-    _tabController = TabController(length: tabCount + 1, vsync: this);
+    _tabController = TabController(length: tabCount + 1, vsync: this, animationDuration: Duration.zero);
     _tabController.addListener(_updateShortCuts);
     _tabsProvider = ref.listenManual(viewerTabsNotifierProvider, (
       previous,
@@ -230,6 +257,7 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
       _tabController = TabController(
         length: newLength,
         vsync: this,
+        animationDuration: Duration.zero,
         // Clamp index so it doesn't exceed bounds if tabs decrease.
         initialIndex: newCurrentIndex,
       );
@@ -289,7 +317,10 @@ class _ImageViewerState extends State<ImageViewer> {
           controller: widget.tabController,
           physics: const NeverScrollableScrollPhysics(),
           children: [
-            ImageArea(source: widget.primaryTab.source, isMonochrome: widget.showMonochrome),
+            ImageArea(
+              source: widget.primaryTab.source,
+              isMonochrome: widget.showMonochrome,
+            ),
             ...widget.otherTabs.mapIndexed(
               (index, galleryEntry) => ImageArea(
                 source: galleryEntry.source,
@@ -320,7 +351,9 @@ class _ImageViewerState extends State<ImageViewer> {
               onPressed: () {},
             ),
             IconButton(
-              tooltip: widget.showMonochrome ? "View in color" : "View in monochrome",
+              tooltip: widget.showMonochrome
+                  ? "View in color"
+                  : "View in monochrome",
               isSelected: widget.showMonochrome,
               onPressed: widget.onToggleMonochrome,
               icon: Icon(Icons.filter_b_and_w_outlined),
@@ -410,23 +443,20 @@ class PinnableFloatingToolbarState extends State<PinnableFloatingToolbar> {
       ...widget.children.sublist(middle),
     ];
 
-    final controls = Padding(
-      padding: const EdgeInsets.all(16.0),
+    final controls = SizedBox(
+      height: 64,
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(32.0),
         ),
         color: Theme.of(context).colorScheme.surfaceContainer,
-        child: SizedBox(
-          height: 64.0,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
-              mainAxisSize: .min,
-              mainAxisAlignment: .center,
-              spacing: 4.0,
-              children: buttons,
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Row(
+            mainAxisSize: .min,
+            mainAxisAlignment: .center,
+            spacing: 4.0,
+            children: buttons,
           ),
         ),
       ),
