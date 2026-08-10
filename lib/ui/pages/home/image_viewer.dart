@@ -89,6 +89,7 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 16.0,
               children: [
                 IconButton(
                   icon: Icon(Icons.close_rounded),
@@ -106,43 +107,24 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
                       dividerColor: Colors.transparent,
                       indicator: BoxDecoration(
                         borderRadius: .circular(8),
-                        color: Colors.black.withValues(alpha: 0.1)
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
                       ),
                       labelPadding: .fromLTRB(8, 0, 4, 0),
                       indicatorSize: TabBarIndicatorSize.tab,
                       splashFactory: NoSplash.splashFactory,
                       overlayColor: WidgetStateProperty.fromMap({
-                        WidgetState.any: Colors.transparent
+                        WidgetState.any: Colors.transparent,
                       }),
                       tabs: [
                         Tab(text: widget.primaryTab.name),
                         ...tabs.mapIndexed(
-                          (index, entry) => Tab(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 280),
-                              child: Row(
-                                spacing: 4,
-                                crossAxisAlignment: .center,
-                                mainAxisSize: .min,
-                                children: [
-                                  Expanded(child: Text(entry.name, overflow: .fade, maxLines: 1, softWrap: false,)),
-                                  SizedBox(
-                                    width: 32,
-                                    height: 32,
-                                    child: IconButton(
-                                      iconSize: 20,
-                                      padding: .zero,
-                                      onPressed: () {
-                                        ref
-                                            .read(viewerTabsNotifierProvider.notifier)
-                                            .closeTab(index);
-                                      },
-                                      icon: Icon(Icons.close),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          (index, entry) => ViewerTab(
+                            name: entry.name,
+                            onClose: () {
+                              ref
+                                  .read(viewerTabsNotifierProvider.notifier)
+                                  .closeTab(index);
+                            },
                           ),
                         ),
                       ],
@@ -197,7 +179,11 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
     };
 
     int tabCount = ref.read(viewerTabsNotifierProvider).length;
-    _tabController = TabController(length: tabCount + 1, vsync: this, animationDuration: Duration.zero);
+    _tabController = TabController(
+      length: tabCount + 1,
+      vsync: this,
+      animationDuration: Duration.zero,
+    );
     _tabController.addListener(_updateShortCuts);
     _tabsProvider = ref.listenManual(viewerTabsNotifierProvider, (
       previous,
@@ -274,6 +260,47 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
     setState(() {
       _pinControls = !_pinControls;
     });
+  }
+}
+
+/// A tab in the viewer's tab bar.
+class ViewerTab extends StatelessWidget {
+  const ViewerTab({super.key, required this.name, required this.onClose});
+
+  /// The text that will appear in the tab.
+  final String name;
+
+  /// The function to call when the tab's close button is pressed.
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tab(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 120),
+        padding: EdgeInsets.only(left: 8),
+        child: Row(
+          mainAxisAlignment: .spaceBetween,
+          crossAxisAlignment: .center,
+          mainAxisSize: .min,
+          children: [
+            Expanded(
+              child: Text(name, overflow: .fade, maxLines: 1, softWrap: false),
+            ),
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: IconButton(
+                iconSize: 20,
+                padding: .zero,
+                onPressed: onClose,
+                icon: Icon(Icons.close),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
