@@ -380,7 +380,7 @@ class ViewerTab extends StatelessWidget {
 
     final backgroundColor = isSelected
         ? colorScheme.surfaceContainer
-        : (isHovered ? colorScheme.primaryContainer : Colors.transparent);
+        : (isHovered ? colorScheme.surfaceContainer.withValues(alpha: 0.7) : Colors.transparent);
 
     return Material(
       color: backgroundColor,
@@ -390,6 +390,7 @@ class ViewerTab extends StatelessWidget {
         onTap: onTap,
         onHover: onHover,
         hoverColor: Colors.transparent,
+        splashColor: Colors.transparent,
         borderRadius: BorderRadius.circular(8.0),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 160),
