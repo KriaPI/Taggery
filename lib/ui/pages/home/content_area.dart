@@ -12,6 +12,9 @@ import 'package:taggery/ui/pages/home/image_viewer.dart';
 
 enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 
+// TODO: show a pop-up message in the bottom right corner that tells the user that a tab has been opened
+// TODO: provide a way of showing the viewer without clicking on an image if the user has already opened a tab.
+
 /// A widget that manages the state of, and contains, the gallery grid and viewer.
 ///
 /// This widget manages the state of the gallery grid and the state of the media viewer that is
@@ -56,7 +59,7 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
         borderRadius: .circular(8.0),
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
       ),
-      padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
       child: viewer,
     );
 
@@ -134,8 +137,8 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   void openInTab(int index) {
     if (galleryContents != null) {
       final newTab = galleryContents![index];
-      ref.read(viewerTabsNotifierProvider.notifier).openTab(newTab);
       precacheImage(FileImage(newTab.source), context);
+      ref.read(viewerTabsNotifierProvider.notifier).openTab(newTab);
     }
 
     if (_viewMode != ContentAreaViewMode.splitView) {
