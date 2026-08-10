@@ -97,37 +97,17 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
                   tooltip: "Close",
                 ),
                 Expanded(
-                  // TODO: add dividers between tabs and extract tab into its own widget.
                   child: SizedBox(
                     height: 32,
-                    child: TabBar(
-                      controller: _tabController,
-                      tabAlignment: .center,
-                      isScrollable: true,
-                      dividerColor: Colors.transparent,
-                      indicator: BoxDecoration(
-                        borderRadius: .circular(8),
-                        color: Theme.of(context).colorScheme.surfaceContainerLow,
-                      ),
-                      labelPadding: .fromLTRB(8, 0, 4, 0),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      splashFactory: NoSplash.splashFactory,
-                      overlayColor: WidgetStateProperty.fromMap({
-                        WidgetState.any: Colors.transparent,
-                      }),
-                      tabs: [
-                        Tab(text: widget.primaryTab.name),
-                        ...tabs.mapIndexed(
-                          (index, entry) => ViewerTab(
-                            name: entry.name,
-                            onClose: () {
-                              ref
-                                  .read(viewerTabsNotifierProvider.notifier)
-                                  .closeTab(index);
-                            },
-                          ),
-                        ),
+                    child: ViewerTabBar(
+                      tabController: _tabController,
+                      tabNames: [
+                        widget.primaryTab.name,
+                        ...tabs.map((entry) => entry.name),
                       ],
+                      onCloseTab: (index) {
+                        ref.read(viewerTabsNotifierProvider.notifier).closeTab(index);
+                      },
                     ),
                   ),
                 ),
@@ -263,29 +243,83 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
   }
 }
 
+/// A scrollable tab bar with dividers between tabs.
+class ViewerTabBar extends StatelessWidget {
+  const ViewerTabBar({
+    super.key,
+    required this.tabController,
+    required this.tabNames,
+    required this.onCloseTab
+  });
+  final TabController tabController;
+  final List<String> tabNames;
+  final void Function(int index) onCloseTab;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: tabController,
+      builder: (context, _) {
+        final selectedIndex = tabController.index;
+
+        final tabs = tabNames.mapIndexed((index, name) {
+          return ViewerTab(
+            name: name,
+            onTap: () {
+              tabController.index = index;
+            },
+            onClose: () {onCloseTab(index - 1);},
+            isSelected: index == selectedIndex,
+            isClosable: index != 0,
+          );
+        }).toList();
+
+        return ListView(scrollDirection: .horizontal, children: tabs);
+      },
+    );
+  }
+}
+
 /// A tab in the viewer's tab bar.
 class ViewerTab extends StatelessWidget {
-  const ViewerTab({super.key, required this.name, required this.onClose});
+  const ViewerTab({
+    super.key,
+    required this.name,
+    required this.onTap,
+    required this.onClose,
+    required this.isClosable,
+    this.isSelected = false,
+  });
 
   /// The text that will appear in the tab.
   final String name;
 
+  /// The function to call when this tab is pressed. This should update the tab bar's currently selected tab.
+  final VoidCallback onTap;
+
   /// The function to call when the tab's close button is pressed.
   final VoidCallback onClose;
 
+  final bool isClosable;
+  final bool isSelected;
+
   @override
   Widget build(BuildContext context) {
-    return Tab(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 120),
-        padding: EdgeInsets.only(left: 8),
-        child: Row(
+    Widget content = Text(
+                name,
+                overflow: .fade,
+                maxLines: 1,
+                softWrap: false,
+              );
+
+    content = isClosable
+      ? Row(
           mainAxisAlignment: .spaceBetween,
           crossAxisAlignment: .center,
           mainAxisSize: .min,
           children: [
             Expanded(
-              child: Text(name, overflow: .fade, maxLines: 1, softWrap: false),
+              child: content,
             ),
             SizedBox(
               width: 32,
@@ -298,7 +332,19 @@ class ViewerTab extends StatelessWidget {
               ),
             ),
           ],
-        ),
+        ) 
+      : content;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 120),
+        padding: EdgeInsets.symmetric(horizontal: 8),
+        alignment: .centerLeft,
+        color: isSelected
+            ? Theme.of(context).colorScheme.surfaceContainer
+            : null,
+        child: content
       ),
     );
   }
