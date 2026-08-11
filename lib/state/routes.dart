@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:taggery/providers/configuration.dart';
+import 'package:taggery/state/configuration.dart';
 import 'package:taggery/ui/pages/home/home_page.dart';
 import 'package:taggery/ui/pages/setup_page.dart';
 
