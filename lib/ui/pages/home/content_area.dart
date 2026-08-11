@@ -127,7 +127,7 @@ class _ContentAreaState extends State<ContentArea> {
   @override
   void initState() {
     super.initState();
-    // 1. Check if settings are ALREADY loaded when this widget mounts
+    // Check if settings are already loaded when this widget mounts.
     final settingsState = context.read<SettingsCubit>().state;
     if (settingsState is SettingsLoadSuccess) {
       context.read<GalleryCubit>().loadDirectory(settingsState.sourceRootPath);
@@ -142,6 +142,7 @@ class _ContentAreaState extends State<ContentArea> {
 
   /// Open the image at [index] in the viewer.
   void open(int index) {
+    // TODO: set tab to primary tab
     final gallery = context.read<GalleryCubit>().state;
     if (gallery is GalleryLoadSuccess) {
       final File toOpen = gallery.content[index].source;
