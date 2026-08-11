@@ -1,10 +1,11 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/models/gallery_entry.dart';
-import 'package:taggery/state/gallery.dart';
-import 'package:taggery/state/tabs.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taggery/logic/settings.dart';
+import 'package:taggery/models/gallery.dart';
+import 'package:taggery/logic/gallery.dart';
+import 'package:taggery/logic/tabs.dart';
+import 'package:taggery/models/settings.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/pages/home/content_filters.dart';
 import 'package:taggery/ui/pages/home/media_grid.dart';
@@ -20,47 +21,45 @@ enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 /// This widget manages the state of the gallery grid and the state of the media viewer that is
 /// opened when a tile of the gallery grid is clicked on. This state includes the list of image shown
 /// in the grid (and viewer) and the index of the list that is currently shown in the viewer.
-class ContentArea extends ConsumerStatefulWidget {
+class ContentArea extends StatefulWidget {
   const ContentArea({super.key});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _ContentAreaState();
+  State<StatefulWidget> createState() => _ContentAreaState();
 }
 
-class _ContentAreaState extends ConsumerState<ContentArea> {
+class _ContentAreaState extends State<ContentArea> {
   final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image viewer");
   ContentAreaViewMode _viewMode = .gridExpanded;
+
+  /// The index of the gallery entry that the primary tab is showing.
   int primaryTabIndex = 0;
-  List<GalleryEntry>? galleryContents;
-  int galleryEntryCount = 0;
 
   @override
   Widget build(BuildContext context) {
-    final gallery = ref.watch(galleryProvider);
-
-    final viewer = gallery.when(
-      data: (data) {
-        return ImageViewerContainer(
-          key: _viewerKey,
-          isInFullview: _viewMode == .viewerExpanded,
-          primaryTab: data[primaryTabIndex],
-          onPrevious: () => previous(),
-          onNext: () => next(),
-          onClose: closeViewer,
-          onToggleFullview: expandOrMinimizeViewer,
-        );
-      },
-      error: (_, _) => null,
-      loading: () => null,
-    );
-
     final viewerArea = Container(
       decoration: BoxDecoration(
         borderRadius: .circular(8.0),
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
       ),
       padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-      child: viewer,
+      child: BlocBuilder<GalleryCubit, GalleryState>(
+        builder: (context, state) {
+          return switch (state) {
+            GalleryLoadSuccess() => ImageViewerContainer(
+              key: _viewerKey,
+              isInFullview: _viewMode == .viewerExpanded,
+              primaryTab: state.content[primaryTabIndex],
+              onPrevious: () => previous(),
+              onNext: () => next(),
+              onClose: closeViewer,
+              onToggleFullview: expandOrMinimizeViewer,
+            ),
+            // Return the equivalent of nothing if the gallery has not loaded yet.
+            _ => const SizedBox(),
+          };
+        },
+      ),
     );
 
     final gridWithFilters = Container(
@@ -74,44 +73,65 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
         children: [
           const ContentFilters(),
           Expanded(
-            child: gallery.when(
-              data: (data) {
-                // This update is required for the viewer to work.
-                galleryContents = data as List<GalleryEntry>;
-                galleryEntryCount = data.length;
-                return MediaGrid(
-                  key: PageStorageKey("Gallery grid scroll extent"),
-                  onSelect: open,
-                  onSelectTab: openInTab,
-                  gallery: data,
-                );
+            child: BlocBuilder<GalleryCubit, GalleryState>(
+              builder: (context, state) {
+                return switch (state) {
+                  GalleryInitial() => const SizedBox(),
+                  GalleryLoadSuccess() => MediaGrid(
+                    key: PageStorageKey("Gallery grid scroll extent"),
+                    onSelect: open,
+                    onSelectTab: openInTab,
+                    gallery: state.content,
+                  ),
+                  GalleryLoadingInProgress() => Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  GalleryLoadFailure() => Column(
+                    crossAxisAlignment: .center,
+                    children: [
+                      TitleText("Could not load images."),
+                      BodyText("Error"),
+                      BodyText("Could not load images."),
+                    ],
+                  ),
+                };
               },
-              loading: () => Center(child: CircularProgressIndicator()),
-              error: (error, stackTrace) => Column(
-                crossAxisAlignment: .center,
-                children: [
-                  TitleText("Could not load images."),
-                  BodyText("$error"),
-                  BodyText("$stackTrace"),
-                ],
-              ),
             ),
           ),
         ],
       ),
     );
 
-    return switch (_viewMode) {
-      .gridExpanded => gridWithFilters,
-      .splitView => Row(
-        spacing: 8.0,
-        children: [
-          Expanded(child: gridWithFilters),
-          Expanded(child: viewerArea),
-        ],
-      ),
-      .viewerExpanded => viewerArea,
-    };
+    return BlocListener<SettingsCubit, SettingsState>(
+      listenWhen: (previous, current) =>
+          current is SettingsLoadSuccess && previous != current,
+      listener: (context, state) {
+        if (state is SettingsLoadSuccess) {
+          context.read<GalleryCubit>().loadDirectory(state.sourceRootPath);
+        }
+      },
+      child: switch (_viewMode) {
+        .gridExpanded => gridWithFilters,
+        .splitView => Row(
+          spacing: 8.0,
+          children: [
+            Expanded(child: gridWithFilters),
+            Expanded(child: viewerArea),
+          ],
+        ),
+        .viewerExpanded => viewerArea,
+      },
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 1. Check if settings are ALREADY loaded when this widget mounts
+    final settingsState = context.read<SettingsCubit>().state;
+    if (settingsState is SettingsLoadSuccess) {
+      context.read<GalleryCubit>().loadDirectory(settingsState.sourceRootPath);
+    }
   }
 
   void closeViewer() {
@@ -122,8 +142,9 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
 
   /// Open the image at [index] in the viewer.
   void open(int index) {
-    if (galleryContents != null) {
-      final File toOpen = galleryContents![index].source;
+    final gallery = context.read<GalleryCubit>().state;
+    if (gallery is GalleryLoadSuccess) {
+      final File toOpen = gallery.content[index].source;
       precacheImage(FileImage(toOpen), context);
     }
 
@@ -135,10 +156,11 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
 
   /// Open the image at [index] as a tab in the viewer.
   void openInTab(int index) {
-    if (galleryContents != null) {
-      final newTab = galleryContents![index];
+    final gallery = context.read<GalleryCubit>().state;
+    if (gallery is GalleryLoadSuccess) {
+      final newTab = gallery.content[index];
       precacheImage(FileImage(newTab.source), context);
-      ref.read(viewerTabsNotifierProvider.notifier).openTab(newTab);
+      context.read<TabCubit>().openTab(newTab);
     }
 
     if (_viewMode != ContentAreaViewMode.splitView) {
@@ -175,32 +197,36 @@ class _ContentAreaState extends ConsumerState<ContentArea> {
   }
 
   void previous() {
-    int newIndex = getPreviousIndex(primaryTabIndex, galleryEntryCount);
+    final gallery = context.read<GalleryCubit>().state;
 
     // Precache the image before the image at newIndex.
-    if (galleryContents != null) {
-      final int previousIndex = getPreviousIndex(newIndex, galleryEntryCount);
-      final File next = galleryContents![previousIndex].source;
+    if (gallery is GalleryLoadSuccess) {
+      final galleryLength = gallery.content.length;
+      int newIndex = getPreviousIndex(primaryTabIndex, galleryLength);
+      final int previousIndex = getPreviousIndex(newIndex, galleryLength);
+      final File next = gallery.content[previousIndex].source;
       precacheImage(FileImage(next), context);
-    }
 
-    setState(() {
-      primaryTabIndex = newIndex;
-    });
+      setState(() {
+        primaryTabIndex = newIndex;
+      });
+    }
   }
 
   void next() {
-    int newIndex = getNextIndex(primaryTabIndex, galleryEntryCount);
+    final gallery = context.read<GalleryCubit>().state;
 
     // Precache the image after the image at newIndex.
-    if (galleryContents != null) {
-      final int nextIndex = getNextIndex(newIndex, galleryEntryCount);
-      final File next = galleryContents![nextIndex].source;
+    if (gallery is GalleryLoadSuccess) {
+      final galleryLength = gallery.content.length;
+      int newIndex = getNextIndex(primaryTabIndex, galleryLength);
+      final int nextIndex = getNextIndex(newIndex, galleryLength);
+      final File next = gallery.content[nextIndex].source;
       precacheImage(FileImage(next), context);
-    }
 
-    setState(() {
-      primaryTabIndex = newIndex;
-    });
+      setState(() {
+        primaryTabIndex = newIndex;
+      });
+    }
   }
 }
