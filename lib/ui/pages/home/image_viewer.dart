@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/models/gallery_entry.dart';
-import 'package:taggery/state/tabs.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:taggery/models/gallery.dart';
+import 'package:taggery/logic/tabs.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 
 // TODO: add indicators/controls for zoom and rotation.
@@ -22,7 +22,7 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 /// The header includes the close button, the tab bar, and the maximize/minimize button. This widget manages
 /// the state of the tabs and shortcuts map.
 ///
-class ImageViewerContainer extends ConsumerStatefulWidget {
+class ImageViewerContainer extends StatefulWidget {
   const ImageViewerContainer({
     super.key,
     required this.isInFullview,
@@ -45,13 +45,11 @@ class ImageViewerContainer extends ConsumerStatefulWidget {
   final VoidCallback onToggleFullview;
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() =>
-      ImageViewerContainerState();
+  State<StatefulWidget> createState() => ImageViewerContainerState();
 }
 
-class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
+class ImageViewerContainerState extends State<ImageViewerContainer>
     with TickerProviderStateMixin {
-  late ProviderSubscription<List<GalleryEntry>> _tabsProvider;
   late TabController _tabController;
 
   /// The map of callbacks called to execute keyboard shortcuts.
@@ -66,8 +64,6 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
 
   @override
   Widget build(BuildContext context) {
-    final tabs = ref.watch(viewerTabsNotifierProvider);
-
     return Actions(
       actions: viewerActions,
       child: Focus(
@@ -87,17 +83,23 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
                 Expanded(
                   child: SizedBox(
                     height: 32,
-                    child: ViewerTabBar(
-                      tabController: _tabController,
-                      tabTitles: [
-                        widget.primaryTab.name,
-                        ...tabs.map((entry) => entry.name),
-                      ],
-                      onCloseTab: (index) {
-                        ref
-                            .read(viewerTabsNotifierProvider.notifier)
-                            .closeTab(index);
+                    child: BlocConsumer<TabCubit, List<GalleryEntry>>(
+                      listener: (context, state) {
+                        // Update the length of the tab controller to match the cubit.
+                        // The length is +1 because there is always an additional tab open
+                        // that allows the user to navigate between gallery items (images/videos).
+                        _updateTabController(state.length + 1);
                       },
+                      builder: (context, tabs) => ViewerTabBar(
+                        tabController: _tabController,
+                        tabTitles: [
+                          widget.primaryTab.name,
+                          ...tabs.map((entry) => entry.name),
+                        ],
+                        onCloseTab: (index) {
+                          context.read<TabCubit>().closeTab(index);
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -115,17 +117,19 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
               ],
             ),
             Expanded(
-              child: ImageViewer(
-                primaryTab: widget.primaryTab,
-                otherTabs: tabs,
-                tabController: _tabController,
-                onPrevious: widget.onPrevious,
-                onNext: widget.onNext,
-                onClose: widget.onClose,
-                onTogglePinControls: togglePinControls,
-                onToggleMonochrome: toggleMonochrome,
-                areControlsPinned: _pinControls,
-                showMonochrome: _isMonochrome,
+              child: BlocBuilder<TabCubit, List<GalleryEntry>>(
+                builder: (context, tabs) => ImageViewer(
+                  primaryTab: widget.primaryTab,
+                  otherTabs: tabs,
+                  tabController: _tabController,
+                  onPrevious: widget.onPrevious,
+                  onNext: widget.onNext,
+                  onClose: widget.onClose,
+                  onTogglePinControls: togglePinControls,
+                  onToggleMonochrome: toggleMonochrome,
+                  areControlsPinned: _pinControls,
+                  showMonochrome: _isMonochrome,
+                ),
               ),
             ),
           ],
@@ -148,19 +152,13 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
       ),
     };
 
-    int tabCount = ref.read(viewerTabsNotifierProvider).length;
+    int tabCount = context.read<TabCubit>().state.length;
     _tabController = TabController(
       length: tabCount + 1,
       vsync: this,
       animationDuration: Duration.zero,
     );
     _tabController.addListener(_updateShortCuts);
-    _tabsProvider = ref.listenManual(viewerTabsNotifierProvider, (
-      previous,
-      next,
-    ) {
-      _updateTabController(next.length + 1);
-    });
     super.initState();
   }
 
@@ -168,7 +166,6 @@ class ImageViewerContainerState extends ConsumerState<ImageViewerContainer>
   void dispose() {
     _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
-    _tabsProvider.close();
     super.dispose();
   }
 
@@ -382,7 +379,9 @@ class ViewerTab extends StatelessWidget {
 
     final backgroundColor = isSelected
         ? colorScheme.surfaceContainer
-        : (isHovered ? colorScheme.surfaceContainer.withValues(alpha: 0.7) : Colors.transparent);
+        : (isHovered
+              ? colorScheme.surfaceContainer.withValues(alpha: 0.7)
+              : Colors.transparent);
 
     return Material(
       color: backgroundColor,

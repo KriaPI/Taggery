@@ -1,34 +1,63 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/ui/components/text_variants.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:taggery/data/gallery_repository.dart';
+import 'package:taggery/data/settings_repository.dart';
+import 'package:taggery/logic/gallery.dart';
+import 'package:taggery/logic/settings.dart';
+import 'package:taggery/logic/tabs.dart';
+import 'package:taggery/models/settings.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
-import 'package:taggery/state/routes.dart';
 import 'package:taggery/ui/configuration/theme.dart';
+import 'package:taggery/ui/pages/home/home_page.dart';
+import 'package:taggery/ui/pages/setup_page.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MainApp()));
+  
+  final settingsRepository = SettingsRepository();
+  final galleryRepository = GalleryRepository();
+  final settingsCubit = SettingsCubit(settingsRepository);
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+
+  final routes = GoRouter(
+      routes: [
+        GoRoute(
+          path: "/",
+          builder: (context, state) => HomePage(),
+          redirect: (context, state) {
+            final settingsState = context.read<SettingsCubit>().state;
+            return settingsState is SettingsNeedsSetup ? "/setup" : null;
+          },
+        ),
+        GoRoute(path: "/setup", builder: (context, state) => SetupPage()),
+      ],
+    ); 
+
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: settingsCubit),
+        BlocProvider(create: (context) => GalleryCubit(galleryRepository)),
+        BlocProvider(create: (context) => TabCubit()),
+      ],
+      child: MainApp(routes: routes),
+    ),
+  );
 }
 
-class MainApp extends ConsumerWidget {
-  const MainApp({super.key});
+class MainApp extends StatelessWidget {
+  const MainApp({super.key, required this.routes});
+  final GoRouter routes;
 
   @override
-  Widget build(BuildContext context, ref) {
-    final router = ref.watch(gorouterProvider);
-
-    if (router.isLoading) {
-      return MaterialApp();
-    } else if (router.hasError) {
-      return MaterialApp(
-        home: Scaffold(
-          body: Center(child: TitleText("Could not load the application.")),
-        ),
-      );
-    }
+  Widget build(BuildContext context) {
+    
 
     return MaterialApp.router(
       shortcuts: keybindings,
-      routerConfig: router.requireValue,
+      routerConfig: routes,
       darkTheme: taggeryDarkTheme,
       theme: taggeryLightTheme,
       themeMode: ThemeMode.light,

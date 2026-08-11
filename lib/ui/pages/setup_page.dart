@@ -1,8 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:taggery/state/configuration.dart';
+import 'package:taggery/logic/settings.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 
 class SetupPage extends StatelessWidget {
@@ -14,46 +14,43 @@ class SetupPage extends StatelessWidget {
   }
 }
 
-/// Widget to manage the state of the application setup dialog.
-class SetupDialog extends ConsumerStatefulWidget {
+/// The initial setup dialog shown to the user.
+class SetupDialog extends StatelessWidget {
   const SetupDialog({super.key});
-
-  @override
-  ConsumerState<ConsumerStatefulWidget> createState() => SetupDialogState();
-}
-
-class SetupDialogState extends ConsumerState<SetupDialog> {
-  bool hasFailed = false;
-
-  void requestRootDirectory() {
-    FilePicker.getDirectoryPath()
-        .then((String? value) {
-          if (value != null) {
-            setRootDirectory(value);
-          }
-        })
-        .catchError((error) {
-          setState(() {
-            hasFailed = true;
-          });
-        });
-  }
-
-  void setRootDirectory(String root) {
-    ref
-        .read(configurationNotifierProvider.notifier)
-        .setGalleryRootDirectory(root);
-    context.go("/home");
-  }
 
   @override
   Widget build(BuildContext context) {
     return PickRootFolderDialog(
-      onPressed: requestRootDirectory,
+      onPressed: () {
+        final newRootDirectory = FilePicker.getDirectoryPath();
+
+        newRootDirectory
+            .then((value) {
+              if (value != null) {
+                if (context.mounted) {
+                  context
+                      .read<SettingsCubit>()
+                      .updateSourceRootPath(value)
+                      .then((_) {
+                        if (context.mounted) {
+                          context.go("/");
+                        }
+                      });
+                } else {
+                  debugPrint("Context was not mounted.");
+                }
+              } else {
+                // TODO: show an message saying that the action (picking a directory) was aborted.
+              }
+            })
+            .catchError((e) {
+              debugPrint("Caught an error.");
+              // TODO: show an error message.
+            });
+      },
       messageTitle: "Set a root folder for the gallery",
-      messageBody: !hasFailed
-          ? "The path to a root folder is required to show images and videos."
-          : "The path could not be set.",
+      messageBody:
+          "The path to a root folder is required to show images and videos.",
     );
   }
 }

@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'dart:ui';
 
@@ -17,4 +16,28 @@ class GalleryEntry {
     final bool isVideo;
     final ContentRating rating; 
     final List<String> tags;
+}
+
+sealed class GalleryState {
+  const GalleryState();
+}
+
+final class GalleryInitial extends GalleryState {
+  const GalleryInitial();
+}
+
+final class GalleryLoadingInProgress extends GalleryState {
+  const GalleryLoadingInProgress();
+}
+
+/// Stores the media shown in the gallery.
+final class GalleryLoadSuccess extends GalleryState {
+  const GalleryLoadSuccess({required this.content});
+
+  final List<GalleryEntry> content;
+}
+
+final class GalleryLoadFailure extends GalleryState {
+  const GalleryLoadFailure({required this.exception});
+  final Exception exception;
 }
