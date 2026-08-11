@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/model/gallery_entry.dart';
-import 'package:taggery/providers/tabs.dart';
+import 'package:taggery/models/gallery_entry.dart';
+import 'package:taggery/state/tabs.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 
 // TODO: add indicators/controls for zoom and rotation.

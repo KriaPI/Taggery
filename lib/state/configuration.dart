@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:taggery/model/user_configuration.dart';
+import 'package:taggery/models/user_configuration.dart';
 
 
 class ConfigurationNotifier extends AsyncNotifier<UserConfiguration> {

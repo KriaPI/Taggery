@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:taggery/model/gallery_entry.dart';
+import 'package:taggery/models/gallery_entry.dart';
 
 class ViewerTabsNotifier extends Notifier<List<GalleryEntry>> {
   @override

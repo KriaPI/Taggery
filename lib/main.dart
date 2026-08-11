@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
-import 'package:taggery/providers/routes.dart';
+import 'package:taggery/state/routes.dart';
 import 'package:taggery/ui/configuration/theme.dart';
 
 void main() {

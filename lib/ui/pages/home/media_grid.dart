@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:taggery/model/gallery_entry.dart';
+import 'package:taggery/models/gallery_entry.dart';
 
 // TODO: add a button after the tags to edit the tags when the user hovers over an item.
 // TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that §ould be displayed at most when the app is in fullscreen and does not have the viewer open).
