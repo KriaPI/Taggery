@@ -204,6 +204,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
     if (_tabController.length == newLength) return;
 
     final newCurrentIndex = _getUpdatedCurrentTabIndex(newLength);
+    _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
 
     setState(() {
@@ -215,6 +216,8 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
         initialIndex: newCurrentIndex,
       );
     });
+
+    _tabController.addListener(_updateShortCuts);
   }
 
   void toggleMonochrome() {
