@@ -6,6 +6,8 @@ import 'package:taggery/model/gallery_entry.dart';
 import 'package:taggery/providers/viewer_tabs.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 
+// TODO: add indicators/controls for zoom and rotation.
+
 // dart format off
 const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0.2126, 0.7152, 0.0722, 0, 0,
