@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 import 'package:path/path.dart';
-import 'package:taggery/data/file_system_interface.dart';
+import 'package:taggery/data/io_helpers.dart';
 import 'package:taggery/models/gallery.dart';
 
 // TODO: make this load in a stream instead.
@@ -11,7 +11,6 @@ class GalleryRepository {
 
   /// Loads the content in the directory at [path] if it has not already been loaded.
   Future<void> loadGalleryFromDirectory(String path) async {
-    // TODO: check if this makes sense.
     if (path == previousDirectoryPath) {
       return;
     }

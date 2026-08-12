@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taggery/data/gallery_repository.dart';
+import 'package:taggery/data/search_repository.dart';
 import 'package:taggery/data/settings_repository.dart';
 import 'package:taggery/logic/gallery.dart';
+import 'package:taggery/logic/search.dart';
 import 'package:taggery/logic/settings.dart';
 import 'package:taggery/logic/tabs.dart';
 import 'package:taggery/models/settings.dart';
@@ -17,6 +19,7 @@ void main() {
   final settingsRepository = SettingsRepository();
   final galleryRepository = GalleryRepository();
   final settingsCubit = SettingsCubit(settingsRepository);
+  final searchRepository = SearchRepository();
 
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -40,6 +43,7 @@ void main() {
       providers: [
         BlocProvider.value(value: settingsCubit),
         BlocProvider(create: (context) => GalleryCubit(galleryRepository)),
+        BlocProvider(create: (context) => SearchSuggestionCubit(searchRepository)),
         BlocProvider(create: (context) => TabCubit()),
       ],
       child: MainApp(routes: routes),
