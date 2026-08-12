@@ -142,7 +142,7 @@ class _ContentAreaState extends State<ContentArea> {
 
   /// Open the image at [index] in the viewer.
   void open(int index) {
-    // TODO: set tab to primary tab
+    // TODO: set tab to primary tab, this can probably be done by adding a listener 
     final gallery = context.read<GalleryCubit>().state;
     if (gallery is GalleryLoadSuccess) {
       final File toOpen = gallery.content[index].source;

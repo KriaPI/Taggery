@@ -62,7 +62,7 @@ class AppPageNavigator extends StatelessWidget {
 }
 
 
-// TODO: implement a provider for search and make this work.
+// TODO: use SearchSuggestionsCubit to load and retrieve suggestions.
 class SearchBar extends StatefulWidget {
   const SearchBar({super.key});
 
