@@ -25,6 +25,7 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 class ImageViewerContainer extends StatefulWidget {
   const ImageViewerContainer({
     super.key,
+    required this.focusNode,
     required this.isInFullview,
     required this.primaryTab,
     required this.onPrevious,
@@ -33,6 +34,7 @@ class ImageViewerContainer extends StatefulWidget {
     required this.onToggleFullview,
   });
 
+  final FocusNode focusNode;
   final bool isInFullview;
 
   /// The tab shown when first opening the viewer.
@@ -50,7 +52,6 @@ class ImageViewerContainer extends StatefulWidget {
 
 class ImageViewerContainerState extends State<ImageViewerContainer>
     with TickerProviderStateMixin {
-  late final FocusNode _viewerFocusNode;
   late TabController _tabController;
 
   /// The map of callbacks called to execute keyboard shortcuts.
@@ -67,13 +68,13 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
   Widget build(BuildContext context) {
     return Actions(
       actions: viewerActions,
-      child: Focus(
-        focusNode: _viewerFocusNode,
-        autofocus: true,
-        child: GestureDetector(
-          onTap: () {
-            _viewerFocusNode.requestFocus();
-          },
+      child: GestureDetector(
+        onTap: () {
+          widget.focusNode.requestFocus();
+        },
+        child: Focus(
+          autofocus: true,
+          focusNode: widget.focusNode,
           child: Column(
             spacing: 4.0,
             children: [
@@ -147,8 +148,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 
   @override
   void initState() {
-    _viewerFocusNode = FocusNode(debugLabel: "Viewer focus node");
-
     viewerActions = {
       PreviousIntent: CallbackAction<PreviousIntent>(
         onInvoke: (intent) => widget.onPrevious(),
@@ -173,10 +172,22 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 
   @override
   void dispose() {
-    _viewerFocusNode.dispose();
     _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageViewerContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the primary tab changed, ensure focus stays on our node
+    if (oldWidget.primaryTab != widget.primaryTab) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !widget.focusNode.hasFocus) {
+          widget.focusNode.requestFocus();
+        }
+      });
+    }
   }
 
   /// Update the map of shortcut actions. Disables the left and right arrow actions

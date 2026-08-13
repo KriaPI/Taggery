@@ -7,40 +7,38 @@ import 'package:taggery/logic/search.dart';
 
 
 class TaggerySearchBar extends StatefulWidget {
-  const TaggerySearchBar({super.key});
+  const TaggerySearchBar({super.key, required this.focusNode, required this.searchController});
+  final FocusNode focusNode;
+  final SearchController searchController;
 
   @override
   State<TaggerySearchBar> createState() => _TaggerySearchBarState();
 }
 
 class _TaggerySearchBarState extends State<TaggerySearchBar> {
-  final _searchController = SearchController();
-  final FocusNode _focusNode = FocusNode(debugLabel: "Search bar focus");
 
   @override
   void initState() {
     super.initState();
 
-    _searchController.addListener(refreshResults);
+    widget.searchController.addListener(refreshResults);
   }
 
   @override
   void dispose() {
-    _focusNode.dispose();
-    _searchController.removeListener(refreshResults);
-    _searchController.dispose();
+    widget.searchController.removeListener(refreshResults);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return SearchAnchor(
-      searchController: _searchController,
+      searchController: widget.searchController,
       shrinkWrap: true,
       builder: (context, controller) {
         return SearchBar(
           autoFocus: false,
-          focusNode: _focusNode,
+          focusNode: widget.focusNode,
           controller: controller,
           hintText: "Search in gallery",
           elevation: WidgetStatePropertyAll(0.0),
@@ -49,20 +47,17 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
             icon: const Icon(Icons.search),
             onPressed: () {
               // Closes the view and submits the current text input
-              _searchController.closeView(_searchController.text);
+              widget.searchController.closeView(widget.searchController.text);
             },
           ),
           onTap: () {
             controller.openView();
           },
-          onTapOutside: (event) {
-            _focusNode.unfocus();
-          },
           onChanged: (value) {
             context.read<SearchSuggestionCubit>().loadSearchOptions(value);
           },
           onSubmitted: (value) {
-            _searchController.closeView(value);
+            widget.searchController.closeView(value);
             final result = context
                 .read<SearchSuggestionCubit>()
                 .state
@@ -77,7 +72,7 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
         icon: const Icon(Icons.search),
         onPressed: () {
           // Closes the view and submits the current text input
-          _searchController.closeView(_searchController.text);
+          widget.searchController.closeView(widget.searchController.text);
         },
       ),
       suggestionsBuilder: (context, controller) {
@@ -117,9 +112,9 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
   }
 
   void refreshResults() {
-    if (_searchController.isOpen) {
+    if (widget.searchController.isOpen) {
       context.read<SearchSuggestionCubit>().loadSearchOptions(
-        _searchController.text,
+        widget.searchController.text,
       );
     }
   }
