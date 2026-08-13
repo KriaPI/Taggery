@@ -1,17 +1,15 @@
 import 'dart:io';
-
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart';
 import 'package:taggery/data/search_repository.dart';
 import 'package:taggery/data/settings_repository.dart';
 
 /// Provides the search suggestions for the search bar's view.
-class SearchSuggestionCubit extends Cubit<TaggerySearchState> {
+class SearchSuggestionCubit extends Cubit<SearchState> {
   SearchSuggestionCubit({
     required this.searchRepository,
     required this.settingsRepository,
-  }) : super(SearchStateEmpty()) {
+  }) : super(SearchState(status: .initial)) {
     loadSearchOptions("");
   }
 
@@ -19,7 +17,7 @@ class SearchSuggestionCubit extends Cubit<TaggerySearchState> {
   final SettingsRepository settingsRepository;
 
   Future<void> loadSearchOptions(String query) async {
-    emit(SearchStateLoading());
+    emit(state.copyWith(status: SearchStatus.loading));
 
     final sourceRootPath = await settingsRepository.sourceRootDirectory;
 
@@ -38,33 +36,29 @@ class SearchSuggestionCubit extends Cubit<TaggerySearchState> {
             );
 
       transformedOptions.isEmpty
-          ? emit(SearchStateEmpty())
-          : emit(SearchStateSuccess(transformedOptions));
+          ? emit(SearchState(status: SearchStatus.empty, items: []))
+          : emit(state.copyWith(status: SearchStatus.loading, items: transformedOptions));
     } else {
-      emit(SearchStateEmpty());
+      emit(state.copyWith(status: SearchStatus.empty));
     }
   }
 }
 
-sealed class TaggerySearchState extends Equatable {
-  const TaggerySearchState();
+enum SearchStatus { initial, loading, success, empty }
 
-  @override
-  List<Object> get props => [];
-}
-
-final class SearchStateEmpty extends TaggerySearchState {}
-
-final class SearchStateLoading extends TaggerySearchState {}
-
-final class SearchStateSuccess extends TaggerySearchState {
-  const SearchStateSuccess(this.items);
-
+class SearchState {
+  final SearchStatus status;
   final Iterable<(String, Directory)> items;
 
-  @override
-  List<Object> get props => [items];
+  SearchState({required this.status, this.items = const []});
 
-  @override
-  String toString() => 'SearchStateSuccess { items: ${items.length} }';
+  SearchState copyWith({
+    SearchStatus? status,
+    Iterable<(String, Directory)>? items,
+  }) {
+    return SearchState(
+      status: status ?? this.status,
+      items: items ?? this.items,
+    );
+  }
 }
