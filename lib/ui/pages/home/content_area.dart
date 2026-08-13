@@ -7,7 +7,6 @@ import 'package:taggery/logic/gallery.dart';
 import 'package:taggery/logic/tabs.dart';
 import 'package:taggery/models/settings.dart';
 import 'package:taggery/ui/components/text_variants.dart';
-import 'package:taggery/ui/pages/home/content_filters.dart';
 import 'package:taggery/ui/pages/home/media_grid.dart';
 import 'package:taggery/ui/pages/home/image_viewer.dart';
 import 'package:taggery/ui/pages/home/search_bar.dart';
@@ -16,7 +15,6 @@ enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 
 // TODO: show a pop-up message in the bottom right corner that tells the user that a tab has been opened
 // TODO: provide a way of showing the viewer without clicking on an image if the user has already opened a tab.
-// TODO: manage focus so that the search bar requests focus for the image viewer whenever it is open.
 
 /// A widget that manages the state of, and contains, the gallery grid and viewer.
 ///
@@ -33,6 +31,9 @@ class ContentArea extends StatefulWidget {
 class _ContentAreaState extends State<ContentArea> {
   final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image viewer");
   ContentAreaViewMode _viewMode = .gridExpanded;
+  late final FocusNode _viewerFocusNode;
+  late final FocusNode _searchBarFocusNode;
+  late final SearchController _searchController;
 
   /// The index of the gallery entry that the primary tab is showing.
   int primaryTabIndex = 0;
@@ -50,6 +51,7 @@ class _ContentAreaState extends State<ContentArea> {
           return switch (state) {
             GalleryLoadSuccess() => ImageViewerContainer(
               key: _viewerKey,
+              focusNode: _viewerFocusNode,
               isInFullview: _viewMode == .viewerExpanded,
               primaryTab: state.content[primaryTabIndex],
               onPrevious: () => previous(),
@@ -73,9 +75,13 @@ class _ContentAreaState extends State<ContentArea> {
       child: Column(
         spacing: 48.0,
         children: [
-          const ContentFilters(),
+          // TODO: re-introduce filters (you should make the filters look better and actually do stuff, connect it to a cubit).
+          //const ContentFilters(),
           Expanded(
-            child: BlocBuilder<GalleryCubit, GalleryState>(
+            child: BlocConsumer<GalleryCubit, GalleryState>(
+              listener: (context, state) {
+                first();
+              },
               builder: (context, state) {
                 return switch (state) {
                   GalleryInitial() => const SizedBox(),
@@ -104,7 +110,9 @@ class _ContentAreaState extends State<ContentArea> {
       ),
     );
 
-    final searchBar = TaggerySearchBar();
+    final searchBar = TaggerySearchBar(
+      focusNode: _searchBarFocusNode, searchController: _searchController,
+    );
 
     return BlocListener<SettingsCubit, SettingsState>(
       listenWhen: (previous, current) =>
@@ -145,6 +153,14 @@ class _ContentAreaState extends State<ContentArea> {
   @override
   void initState() {
     super.initState();
+    _searchController = SearchController();
+    _viewerFocusNode = FocusNode(debugLabel: "Viewer focus node");
+    _searchBarFocusNode = FocusNode(debugLabel: "Search bar focus");
+
+    // Make sure that the viewer is in focus if the search bar is not in focus
+    _searchBarFocusNode.addListener(_handleViewerFocus);
+
+
     // Check if settings are already loaded when this widget mounts.
     final settingsState = context.read<SettingsCubit>().state;
     if (settingsState is SettingsLoadSuccess) {
@@ -152,10 +168,31 @@ class _ContentAreaState extends State<ContentArea> {
     }
   }
 
+  @override
+  void dispose() {
+    _viewerFocusNode.removeListener(_handleViewerFocus);
+    _viewerFocusNode.dispose();
+    _searchBarFocusNode.dispose();
+    _searchController.dispose();
+    
+
+    super.dispose();
+  }
+
   void closeViewer() {
     setState(() {
       _viewMode = .gridExpanded;
     });
+  }
+
+  void _handleViewerFocus() {
+    if (_searchController.isOpen) {
+      return;
+    }
+
+    if (!_viewerFocusNode.hasFocus && !_searchBarFocusNode.hasFocus) {
+      _viewerFocusNode.requestFocus();
+    }
   }
 
   /// Open the image at [index] in the viewer.
@@ -245,6 +282,21 @@ class _ContentAreaState extends State<ContentArea> {
 
       setState(() {
         primaryTabIndex = newIndex;
+      });
+    }
+  }
+
+  /// Set the primary tab index to the first item.
+  void first() {
+    final gallery = context.read<GalleryCubit>().state;
+
+    // Precache the image after the image at newIndex.
+    if (gallery is GalleryLoadSuccess) {
+      final File first = gallery.content[0].source;
+      precacheImage(FileImage(first), context);
+
+      setState(() {
+        primaryTabIndex = 0;
       });
     }
   }

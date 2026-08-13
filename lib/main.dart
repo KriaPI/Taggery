@@ -22,9 +22,6 @@ void main() {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  // FocusManager.instance.addListener(() {
-  //   debugPrint('Current primaryFocus: ${FocusManager.instance.primaryFocus}');
-  // });
 
   final routes = GoRouter(
     routes: [
