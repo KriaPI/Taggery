@@ -4,28 +4,44 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart';
 import 'package:taggery/data/search_repository.dart';
+import 'package:taggery/data/settings_repository.dart';
 
 /// Provides the search suggestions for the search bar's view.
 class SearchSuggestionCubit extends Cubit<TaggerySearchState> {
-  SearchSuggestionCubit(this._repository) : super(SearchStateEmpty());
+  SearchSuggestionCubit({
+    required this.searchRepository,
+    required this.settingsRepository,
+  }) : super(SearchStateEmpty()) {
+    loadSearchOptions("");
+  }
 
-  final SearchRepository _repository;
+  final SearchRepository searchRepository;
+  final SettingsRepository settingsRepository;
 
-  Future<void> loadSearchSuggestions(String input) async {
+  Future<void> loadSearchOptions(String query) async {
     emit(SearchStateLoading());
 
-    final trimmedInput = input.trim();
-    final suggestions = _repository.subdirectories.map(
-      (directory) => (basename(directory.path), directory),
-    );
-    final filteredSuggestions = suggestions
-        .where((suggestion) => suggestion.$1.startsWith(trimmedInput))
-        .toList();
+    final sourceRootPath = await settingsRepository.sourceRootDirectory;
 
-    if (filteredSuggestions.isEmpty) {
-      emit(SearchStateEmpty());
+    if (sourceRootPath != null) {
+      final options = await searchRepository.getRootSubDirectories(
+        sourceRootPath,
+      );
+      var transformedOptions = options.map(
+        (directory) => (basename(directory.path), directory),
+      );
+
+      transformedOptions = query == ""
+          ? transformedOptions
+          : transformedOptions.where(
+              (suggestion) => suggestion.$1.startsWith(query.trim()),
+            );
+
+      transformedOptions.isEmpty
+          ? emit(SearchStateEmpty())
+          : emit(SearchStateSuccess(transformedOptions));
     } else {
-      emit(SearchStateSuccess(filteredSuggestions));
+      emit(SearchStateEmpty());
     }
   }
 }
@@ -44,7 +60,7 @@ final class SearchStateLoading extends TaggerySearchState {}
 final class SearchStateSuccess extends TaggerySearchState {
   const SearchStateSuccess(this.items);
 
-  final List<(String, Directory)> items;
+  final Iterable<(String, Directory)> items;
 
   @override
   List<Object> get props => [items];
