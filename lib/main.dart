@@ -15,7 +15,6 @@ import 'package:taggery/ui/pages/home/home_page.dart';
 import 'package:taggery/ui/pages/setup_page.dart';
 
 void main() {
-  
   final settingsRepository = SettingsRepository();
   final galleryRepository = GalleryRepository();
   final searchRepository = SearchRepository();
@@ -23,27 +22,35 @@ void main() {
 
   WidgetsFlutterBinding.ensureInitialized();
 
+  // FocusManager.instance.addListener(() {
+  //   debugPrint('Current primaryFocus: ${FocusManager.instance.primaryFocus}');
+  // });
 
   final routes = GoRouter(
-      routes: [
-        GoRoute(
-          path: "/",
-          builder: (context, state) => HomePage(),
-          redirect: (context, state) {
-            final settingsState = context.read<SettingsCubit>().state;
-            return settingsState is SettingsNeedsSetup ? "/setup" : null;
-          },
-        ),
-        GoRoute(path: "/setup", builder: (context, state) => SetupPage()),
-      ],
-    ); 
+    routes: [
+      GoRoute(
+        path: "/",
+        builder: (context, state) => HomePage(),
+        redirect: (context, state) {
+          final settingsState = context.read<SettingsCubit>().state;
+          return settingsState is SettingsNeedsSetup ? "/setup" : null;
+        },
+      ),
+      GoRoute(path: "/setup", builder: (context, state) => SetupPage()),
+    ],
+  );
 
   runApp(
     MultiBlocProvider(
       providers: [
         BlocProvider.value(value: settingsCubit),
         BlocProvider(create: (context) => GalleryCubit(galleryRepository)),
-        BlocProvider(create: (context) => SearchSuggestionCubit(searchRepository: searchRepository, settingsRepository: settingsRepository)),
+        BlocProvider(
+          create: (context) => SearchSuggestionCubit(
+            searchRepository: searchRepository,
+            settingsRepository: settingsRepository,
+          ),
+        ),
         BlocProvider(create: (context) => TabCubit()),
       ],
       child: MainApp(routes: routes),
@@ -57,8 +64,6 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
-
     return MaterialApp.router(
       shortcuts: keybindings,
       routerConfig: routes,
