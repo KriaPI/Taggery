@@ -12,6 +12,7 @@ import 'package:taggery/models/settings.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 import 'package:taggery/ui/configuration/theme.dart';
 import 'package:taggery/ui/pages/home/home_page.dart';
+import 'package:taggery/ui/pages/settings/settings_page.dart';
 import 'package:taggery/ui/pages/setup_page.dart';
 
 void main() {
@@ -22,16 +23,31 @@ void main() {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-
   final routes = GoRouter(
     routes: [
       GoRoute(
         path: "/",
-        builder: (context, state) => HomePage(),
+        pageBuilder: (context, state) {
+          final fromSetup = state.extra as bool? ?? false;
+
+          if (fromSetup) {
+            return MaterialPage(key: state.pageKey, child: const HomePage());
+          }
+
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: const HomePage(),
+          );
+        },
         redirect: (context, state) {
           final settingsState = context.read<SettingsCubit>().state;
           return settingsState is SettingsNeedsSetup ? "/setup" : null;
         },
+      ),
+      GoRoute(
+        path: "/settings",
+        pageBuilder: (context, state) =>
+            NoTransitionPage(child: SettingsPage()),
       ),
       GoRoute(path: "/setup", builder: (context, state) => SetupPage()),
     ],
