@@ -5,14 +5,24 @@ class SettingsRepository {
   final SharedPreferencesAsync _asyncPreferences = SharedPreferencesAsync();
   static const String _sourceRootDirectoryKey = "sourceRootPath";
 
-  /// Retreive the root of the source directory. A return value of Null indicates that
-  /// the root has not been set. Call [setSourceDirectory] to set the root.
+  String? _sourceRootDirectory;
+
+  /// Retreive the root of the source directory. 
+  /// 
+  /// A return value of Null indicates that the root has not been set. Call [setSourceDirectory] to set the root.
+  /// The result of this getter is cached.
   Future<String?> get sourceRootDirectory async {
-    return await _asyncPreferences.getString(_sourceRootDirectoryKey);
+    if (_sourceRootDirectory == null) {
+      _sourceRootDirectory = await _asyncPreferences.getString(_sourceRootDirectoryKey);
+      return _sourceRootDirectory;
+    } else {
+      return _sourceRootDirectory;
+    }
   }
   
   /// Set the root of the source directory. This is persisted to disk.
   Future<void> setSourceRootDirectory(String path) async {
-    return _asyncPreferences.setString(_sourceRootDirectoryKey, path);
+    _asyncPreferences.setString(_sourceRootDirectoryKey, path);
+    _sourceRootDirectory = await _asyncPreferences.getString(_sourceRootDirectoryKey);
   }
 }

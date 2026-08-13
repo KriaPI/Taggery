@@ -18,8 +18,8 @@ void main() {
   
   final settingsRepository = SettingsRepository();
   final galleryRepository = GalleryRepository();
-  final settingsCubit = SettingsCubit(settingsRepository);
   final searchRepository = SearchRepository();
+  final settingsCubit = SettingsCubit(settingsRepository);
 
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -43,7 +43,7 @@ void main() {
       providers: [
         BlocProvider.value(value: settingsCubit),
         BlocProvider(create: (context) => GalleryCubit(galleryRepository)),
-        BlocProvider(create: (context) => SearchSuggestionCubit(searchRepository)),
+        BlocProvider(create: (context) => SearchSuggestionCubit(searchRepository: searchRepository, settingsRepository: settingsRepository)),
         BlocProvider(create: (context) => TabCubit()),
       ],
       child: MainApp(routes: routes),
