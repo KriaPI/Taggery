@@ -10,11 +10,13 @@ import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/pages/home/content_filters.dart';
 import 'package:taggery/ui/pages/home/media_grid.dart';
 import 'package:taggery/ui/pages/home/image_viewer.dart';
+import 'package:taggery/ui/pages/home/search_bar.dart';
 
 enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 
 // TODO: show a pop-up message in the bottom right corner that tells the user that a tab has been opened
 // TODO: provide a way of showing the viewer without clicking on an image if the user has already opened a tab.
+// TODO: manage focus so that the search bar requests focus for the image viewer whenever it is open.
 
 /// A widget that manages the state of, and contains, the gallery grid and viewer.
 ///
@@ -102,6 +104,8 @@ class _ContentAreaState extends State<ContentArea> {
       ),
     );
 
+    final searchBar = TaggerySearchBar();
+
     return BlocListener<SettingsCubit, SettingsState>(
       listenWhen: (previous, current) =>
           current is SettingsLoadSuccess && previous != current,
@@ -111,12 +115,26 @@ class _ContentAreaState extends State<ContentArea> {
         }
       },
       child: switch (_viewMode) {
-        .gridExpanded => gridWithFilters,
-        .splitView => Row(
+        .gridExpanded => Column(
           spacing: 8.0,
           children: [
+            searchBar,
             Expanded(child: gridWithFilters),
-            Expanded(child: viewerArea),
+          ],
+        ),
+        .splitView => Column(
+          spacing: 8.0,
+          children: [
+            searchBar,
+            Expanded(
+              child: Row(
+                spacing: 8.0,
+                children: [
+                  Expanded(child: gridWithFilters),
+                  Expanded(child: viewerArea),
+                ],
+              ),
+            ),
           ],
         ),
         .viewerExpanded => viewerArea,
@@ -142,7 +160,7 @@ class _ContentAreaState extends State<ContentArea> {
 
   /// Open the image at [index] in the viewer.
   void open(int index) {
-    // TODO: set tab to primary tab, this can probably be done by adding a listener 
+    // TODO: set tab to primary tab, this can probably be done by adding a listener
     final gallery = context.read<GalleryCubit>().state;
     if (gallery is GalleryLoadSuccess) {
       final File toOpen = gallery.content[index].source;

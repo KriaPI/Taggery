@@ -50,6 +50,7 @@ class ImageViewerContainer extends StatefulWidget {
 
 class ImageViewerContainerState extends State<ImageViewerContainer>
     with TickerProviderStateMixin {
+  late final FocusNode _viewerFocusNode;
   late TabController _tabController;
 
   /// The map of callbacks called to execute keyboard shortcuts.
@@ -67,72 +68,78 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
     return Actions(
       actions: viewerActions,
       child: Focus(
+        focusNode: _viewerFocusNode,
         autofocus: true,
-        child: Column(
-          spacing: 4.0,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              spacing: 16.0,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.close_rounded),
-                  onPressed: widget.onClose,
-                  tooltip: "Close",
-                ),
-                Expanded(
-                  child: SizedBox(
-                    height: 32,
-                    child: BlocConsumer<TabCubit, List<GalleryEntry>>(
-                      listener: (context, state) {
-                        // Update the length of the tab controller to match the cubit.
-                        // The length is +1 because there is always an additional tab open
-                        // that allows the user to navigate between gallery items (images/videos).
-                        _updateTabController(state.length + 1);
-                      },
-                      builder: (context, tabs) => ViewerTabBar(
-                        tabController: _tabController,
-                        tabTitles: [
-                          widget.primaryTab.name,
-                          ...tabs.map((entry) => entry.name),
-                        ],
-                        onCloseTab: (index) {
-                          context.read<TabCubit>().closeTab(index);
+        child: GestureDetector(
+          onTap: () {
+            _viewerFocusNode.requestFocus();
+          },
+          child: Column(
+            spacing: 4.0,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 16.0,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.close_rounded),
+                    onPressed: widget.onClose,
+                    tooltip: "Close",
+                  ),
+                  Expanded(
+                    child: SizedBox(
+                      height: 32,
+                      child: BlocConsumer<TabCubit, List<GalleryEntry>>(
+                        listener: (context, state) {
+                          // Update the length of the tab controller to match the cubit.
+                          // The length is +1 because there is always an additional tab open
+                          // that allows the user to navigate between gallery items (images/videos).
+                          _updateTabController(state.length + 1);
                         },
+                        builder: (context, tabs) => ViewerTabBar(
+                          tabController: _tabController,
+                          tabTitles: [
+                            widget.primaryTab.name,
+                            ...tabs.map((entry) => entry.name),
+                          ],
+                          onCloseTab: (index) {
+                            context.read<TabCubit>().closeTab(index);
+                          },
+                        ),
                       ),
                     ),
                   ),
-                ),
-                widget.isInFullview
-                    ? IconButton(
-                        onPressed: widget.onToggleFullview,
-                        icon: Icon(Icons.close_fullscreen_rounded),
-                        tooltip: "Minimize",
-                      )
-                    : IconButton(
-                        onPressed: widget.onToggleFullview,
-                        icon: Icon(Icons.open_in_full_rounded),
-                        tooltip: "Maximize",
-                      ),
-              ],
-            ),
-            Expanded(
-              child: BlocBuilder<TabCubit, List<GalleryEntry>>(
-                builder: (context, tabs) => ImageViewer(
-                  primaryTab: widget.primaryTab,
-                  otherTabs: tabs,
-                  tabController: _tabController,
-                  onPrevious: widget.onPrevious,
-                  onNext: widget.onNext,
-                  onClose: widget.onClose,
-                  onTogglePinControls: togglePinControls,
-                  onToggleMonochrome: toggleMonochrome,
-                  areControlsPinned: _pinControls,
-                  showMonochrome: _isMonochrome,
+                  widget.isInFullview
+                      ? IconButton(
+                          onPressed: widget.onToggleFullview,
+                          icon: Icon(Icons.close_fullscreen_rounded),
+                          tooltip: "Minimize",
+                        )
+                      : IconButton(
+                          onPressed: widget.onToggleFullview,
+                          icon: Icon(Icons.open_in_full_rounded),
+                          tooltip: "Maximize",
+                        ),
+                ],
+              ),
+              Expanded(
+                child: BlocBuilder<TabCubit, List<GalleryEntry>>(
+                  builder: (context, tabs) => ImageViewer(
+                    primaryTab: widget.primaryTab,
+                    otherTabs: tabs,
+                    tabController: _tabController,
+                    onPrevious: widget.onPrevious,
+                    onNext: widget.onNext,
+                    onClose: widget.onClose,
+                    onTogglePinControls: togglePinControls,
+                    onToggleMonochrome: toggleMonochrome,
+                    areControlsPinned: _pinControls,
+                    showMonochrome: _isMonochrome,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -140,6 +147,8 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 
   @override
   void initState() {
+    _viewerFocusNode = FocusNode(debugLabel: "Viewer focus node");
+
     viewerActions = {
       PreviousIntent: CallbackAction<PreviousIntent>(
         onInvoke: (intent) => widget.onPrevious(),
@@ -164,6 +173,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 
   @override
   void dispose() {
+    _viewerFocusNode.dispose();
     _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
     super.dispose();

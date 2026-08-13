@@ -7,6 +7,8 @@ import 'package:taggery/models/gallery.dart';
 const int arbitraryMinimumCellSize = 300;
 
 // TODO: keep scrolling even if the widget changes dimensions.
+
+// TODO: load images while scrolling, instead of loading everything at once.
 class MediaGrid extends StatelessWidget {
   const MediaGrid({
     super.key,
