@@ -180,12 +180,11 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
   @override
   void didUpdateWidget(covariant ImageViewerContainer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If the primary tab changed, ensure focus stays on our node
+    // Show the primary tab if the user opens a new image while
+    // having a different tab open.
     if (oldWidget.primaryTab != widget.primaryTab) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !widget.focusNode.hasFocus) {
-          widget.focusNode.requestFocus();
-        }
+        _tabController.index = 0;
       });
     }
   }
@@ -212,19 +211,16 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
     });
   }
 
-  /// Calculate the index that the updated tab controller should set as its
-  /// initial index.
-  int _getUpdatedCurrentTabIndex(int newLength) {
-    int oldCurrentIndex = _tabController.index;
-
-    return oldCurrentIndex < newLength ? oldCurrentIndex : newLength - 1;
+  /// Get the index of the tab that was opened.
+  int _getNewTabIndex(int newLength) {
+    return newLength >= 2 ? 1 : 0;
   }
 
   /// Update the length and currently viewed index of the tab controller.
   void _updateTabController(int newLength) {
     if (_tabController.length == newLength) return;
 
-    final newCurrentIndex = _getUpdatedCurrentTabIndex(newLength);
+    final newCurrentIndex = _getNewTabIndex(newLength);
     _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
 
@@ -233,7 +229,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
         length: newLength,
         vsync: this,
         animationDuration: Duration.zero,
-        // Clamp index so it doesn't exceed bounds if tabs decrease.
         initialIndex: newCurrentIndex,
       );
     });
@@ -284,8 +279,6 @@ class _ViewerTabBarState extends State<ViewerTabBar> {
       listenable: widget.tabController,
       builder: (context, _) {
         final selectedIndex = widget.tabController.index;
-
-        // TODO: replace with ReorderableListView
 
         return ListView.separated(
           scrollDirection: .horizontal,

@@ -74,7 +74,7 @@ class PickRootFolderDialog extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        TitleText(messageTitle),
+        TitleTextMedium(messageTitle),
         BodyText(messageBody),
         SizedBox(height: 16.0),
         FilledButton.icon(
