@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:taggery/data/gallery_repository.dart';
 import 'package:taggery/data/search_repository.dart';
 import 'package:taggery/data/settings_repository.dart';
@@ -20,8 +21,8 @@ void main() {
   final galleryRepository = GalleryRepository();
   final searchRepository = SearchRepository();
   final settingsCubit = SettingsCubit(settingsRepository);
-
   WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
 
   final routes = GoRouter(
     routes: [

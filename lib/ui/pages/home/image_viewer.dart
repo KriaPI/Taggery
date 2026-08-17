@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:taggery/models/gallery.dart';
 import 'package:taggery/logic/tabs.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
@@ -15,6 +17,8 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
   0, 0, 0, 1, 0,
 ]);
 // dart format on
+
+// TODO: replace primary tab with an entry in the tab cubit.
 
 /// This widget contains the header for the viewer and the viewer itself as a child.
 ///
@@ -89,7 +93,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
                   Expanded(
                     child: SizedBox(
                       height: 32,
-                      child: BlocConsumer<TabCubit, List<GalleryEntry>>(
+                      child: BlocConsumer<TabCubit, List<TabState>>(
                         listener: (context, state) {
                           // Update the length of the tab controller to match the cubit.
                           // The length is +1 because there is always an additional tab open
@@ -100,7 +104,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
                           tabController: _tabController,
                           tabTitles: [
                             widget.primaryTab.name,
-                            ...tabs.map((entry) => entry.name),
+                            ...tabs.map((entry) => entry.content.name),
                           ],
                           onCloseTab: (index) {
                             context.read<TabCubit>().closeTab(index);
@@ -123,10 +127,14 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
                 ],
               ),
               Expanded(
-                child: BlocBuilder<TabCubit, List<GalleryEntry>>(
+                child: BlocBuilder<TabCubit, List<TabState>>(
                   builder: (context, tabs) => ImageViewer(
-                    primaryTab: widget.primaryTab,
-                    otherTabs: tabs,
+                    tabs: [
+                      widget.primaryTab.isVideo
+                          ? VideoTabState(content: widget.primaryTab)
+                          : TabState(content: widget.primaryTab),
+                      ...tabs,
+                    ],
                     tabController: _tabController,
                     onPrevious: widget.onPrevious,
                     onNext: widget.onNext,
@@ -424,8 +432,7 @@ class ViewerTab extends StatelessWidget {
 class ImageViewer extends StatefulWidget {
   const ImageViewer({
     super.key,
-    required this.primaryTab,
-    required this.otherTabs,
+    required this.tabs,
     required this.tabController,
     required this.onPrevious,
     required this.onNext,
@@ -435,8 +442,7 @@ class ImageViewer extends StatefulWidget {
     required this.areControlsPinned,
     required this.showMonochrome,
   });
-  final GalleryEntry primaryTab;
-  final List<GalleryEntry> otherTabs;
+  final List<TabState> tabs;
   final TabController tabController;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -451,23 +457,32 @@ class ImageViewer extends StatefulWidget {
 }
 
 class _ImageViewerState extends State<ImageViewer> {
+  late final player = Player();
+  late final videoController = VideoController(player);
+
   @override
   Widget build(BuildContext context) {
-    final tabs = [widget.primaryTab, ...widget.otherTabs];
+    final tabs = widget.tabs;
     final mediaAreas = tabs.map((tab) {
-      return tab.isVideo 
-        ? SizedBox()
-        : ImageArea(source: tab.source, isMonochrome: widget.showMonochrome);
+      return tab is VideoTabState
+          ? VideoArea(
+              source: tab.source,
+              isMonochrome: widget.showMonochrome,
+              videoController: videoController,
+            )
+          : ImageArea(source: tab.source, isMonochrome: widget.showMonochrome);
     }).toList();
 
+    // TODO: implement a custom video controller.
     return Stack(
       alignment: .bottomCenter,
       children: [
         TabBarView(
           controller: widget.tabController,
           physics: const NeverScrollableScrollPhysics(),
-          children: mediaAreas
+          children: mediaAreas,
         ),
+        // TODO: break into its own widget.
         PinnableFloatingToolbar(
           isPinned: widget.areControlsPinned,
           onTogglePin: widget.onTogglePinControls,
@@ -498,6 +513,37 @@ class _ImageViewerState extends State<ImageViewer> {
               icon: Icon(Icons.filter_b_and_w_outlined),
               selectedIcon: Icon(Icons.filter_b_and_w),
             ),
+            if (tabs[widget.tabController.index] is VideoTabState) ...[
+              StreamBuilder(
+                stream: player.stream.position,
+                builder: (context, snapshot) {
+                  final value = snapshot.data == null
+                      ? 0.0
+                      : snapshot.data!.inMilliseconds / 1000.0;
+                  final videoDuration = player.state.duration;
+                  final maxValue = videoDuration == Duration.zero
+                      ? 1.0
+                      : videoDuration.inMilliseconds / 1000.0;
+
+                  return Slider(
+                    value: value,
+                    max: maxValue,
+                    onChangeStart: (value) {
+                      player.pause();
+                    },
+                    onChangeEnd: (value) {
+                      player.play();
+                    },
+                    onChanged: (value) {
+                      final duration = Duration(
+                        milliseconds: (value * 1000).round(),
+                      );
+                      player.seek(duration);
+                    },
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ],
@@ -507,7 +553,11 @@ class _ImageViewerState extends State<ImageViewer> {
   @override
   void initState() {
     super.initState();
-    // Listen to tab selection changes to rebuild the toolbar immediately.
+    player.setPlaylistMode(.none);
+    player.setVolume(0.0);
+    conditionallyPlayVideo();
+
+    // Listen to tab selection changes to rebuild the toolbar.
     widget.tabController.addListener(_handleTabSelection);
   }
 
@@ -515,20 +565,49 @@ class _ImageViewerState extends State<ImageViewer> {
   void didUpdateWidget(covariant ImageViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Handle tabController replacements when length changes in parent.
+    // We check for equality since the tabController is replaced when the length changes.
     if (oldWidget.tabController != widget.tabController) {
       oldWidget.tabController.removeListener(_handleTabSelection);
       widget.tabController.addListener(_handleTabSelection);
     }
+
+    final oldOpenedTab = oldWidget.tabs[oldWidget.tabController.index];
+    final newOpenedTab = widget.tabs[widget.tabController.index];
+
+    if (oldOpenedTab.source != newOpenedTab.source) {
+      conditionallyPlayVideo();
+    }
   }
+
+  // TODO: save the duration of the currently viewed video when the viewer is closed or when switching to
+  // Another tab.
 
   @override
   void dispose() {
     widget.tabController.removeListener(_handleTabSelection);
+    player.dispose();
     super.dispose();
+  }
+
+  /// True if the tab with index [index] has a video as its source.
+  bool _tabShowsVideo(int index) {
+    return widget.tabs[index] is VideoTabState;
+  }
+
+  /// If the currently opened tab's source is a video, make the neccessary setup to play the video.
+  void conditionallyPlayVideo() {
+    final currentTabIndex = widget.tabController.index;
+
+    if (_tabShowsVideo(currentTabIndex)) {
+      final tab = widget.tabs[currentTabIndex];
+      final playable = Media(tab.source.uri.toString());
+      player.open(playable, play: true);
+    }
   }
 
   void _handleTabSelection() {
     if (mounted) {
+      conditionallyPlayVideo();
       setState(() {});
     }
   }
@@ -709,16 +788,17 @@ class _ImageAreaState extends State<ImageArea> {
   }
 }
 
-
 /// A widget that allows for panning, zooming, and applying a monochrome filter on a video.
 class VideoArea extends StatefulWidget {
   const VideoArea({
     super.key,
     required this.source,
     required this.isMonochrome,
+    required this.videoController,
   });
   final File source;
   final bool isMonochrome;
+  final VideoController videoController;
 
   @override
   State<VideoArea> createState() => _VideoAreaState();
@@ -755,6 +835,12 @@ class _VideoAreaState extends State<VideoArea> {
 
   @override
   Widget build(BuildContext context) {
+    final video = Video(
+      controller: widget.videoController,
+      fit: .contain,
+      controls: NoVideoControls,
+    );
+
     return MouseRegion(
       cursor: _isZoomedIn
           ? SystemMouseCursors.allScroll
@@ -768,19 +854,8 @@ class _VideoAreaState extends State<VideoArea> {
           maxScale: 10.0,
           child: SizedBox.expand(
             child: widget.isMonochrome
-                ? ColorFiltered(
-                    colorFilter: grayscaleFilter,
-                    child: Image.file(
-                      widget.source,
-                      gaplessPlayback: false,
-                      fit: .contain,
-                    ),
-                  )
-                : Image.file(
-                    widget.source,
-                    gaplessPlayback: false,
-                    fit: .contain,
-                  ),
+                ? ColorFiltered(colorFilter: grayscaleFilter, child: video)
+                : video,
           ),
         ),
       ),
