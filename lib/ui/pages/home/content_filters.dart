@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ContentFilters extends StatelessWidget {
   const ContentFilters({super.key});

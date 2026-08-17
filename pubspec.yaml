@@ -19,6 +19,7 @@ dependencies:
   shared_preferences: ^2.5.5
   stream_transform: ^2.1.1
 
+  material_ui: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

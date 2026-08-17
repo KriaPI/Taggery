@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A square tonal icon button following the Material design 3 expressive design system.
 ///
