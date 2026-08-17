@@ -111,7 +111,8 @@ class _ContentAreaState extends State<ContentArea> {
     );
 
     final searchBar = TaggerySearchBar(
-      focusNode: _searchBarFocusNode, searchController: _searchController,
+      focusNode: _searchBarFocusNode,
+      searchController: _searchController,
     );
 
     return BlocListener<SettingsCubit, SettingsState>(
@@ -160,7 +161,6 @@ class _ContentAreaState extends State<ContentArea> {
     // Make sure that the viewer is in focus if the search bar is not in focus
     _searchBarFocusNode.addListener(_handleViewerFocus);
 
-
     // Check if settings are already loaded when this widget mounts.
     final settingsState = context.read<SettingsCubit>().state;
     if (settingsState is SettingsLoadSuccess) {
@@ -174,7 +174,6 @@ class _ContentAreaState extends State<ContentArea> {
     _viewerFocusNode.dispose();
     _searchBarFocusNode.dispose();
     _searchController.dispose();
-    
 
     super.dispose();
   }
@@ -251,6 +250,8 @@ class _ContentAreaState extends State<ContentArea> {
     return current != length - 1 ? current + 1 : 0;
   }
 
+
+  // TODO: disable image precache if the media is a video.
   void previous() {
     final gallery = context.read<GalleryCubit>().state;
 
@@ -291,8 +292,11 @@ class _ContentAreaState extends State<ContentArea> {
 
     // Precache the image after the image at newIndex.
     if (gallery is GalleryLoadSuccess) {
-      final File first = gallery.content[0].source;
-      precacheImage(FileImage(first), context);
+      final first = gallery.content[0];
+
+      if (!first.isVideo) {
+        precacheImage(FileImage(first.source), context);
+      }
 
       setState(() {
         primaryTabIndex = 0;

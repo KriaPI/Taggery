@@ -10,10 +10,18 @@ bool isImage(File file) {
         : false;
 }
 
-/// Load all images from the directory, and its subdirectories, at path [directoryPath].
-Stream<File> loadImagesFromDirectory(String directoryPath) async* {
+/// Check if a file is an image according to its MIME type.
+bool isVideo(File file) {
+    final mimeType = lookupMimeType(file.path);
+    return mimeType != null
+        ? mimeType.startsWith("video")
+        : false;
+}
+
+/// Load all images and videos from the directory, and its subdirectories, at path [directoryPath].
+Stream<File> loadMediaFromDirectory(String directoryPath) async* {
   final directory = Directory(directoryPath);
-  yield* directory.list(recursive: true).whereType<File>().where(isImage);
+  yield* directory.list(recursive: true).whereType<File>().where((file) => isImage(file) || isVideo(file));
 }
 
 /// Retrieve all subdirectories of the directory at [path].

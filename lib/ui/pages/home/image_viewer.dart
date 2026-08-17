@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taggery/models/gallery.dart';
@@ -454,24 +453,20 @@ class ImageViewer extends StatefulWidget {
 class _ImageViewerState extends State<ImageViewer> {
   @override
   Widget build(BuildContext context) {
+    final tabs = [widget.primaryTab, ...widget.otherTabs];
+    final mediaAreas = tabs.map((tab) {
+      return tab.isVideo 
+        ? SizedBox()
+        : ImageArea(source: tab.source, isMonochrome: widget.showMonochrome);
+    }).toList();
+
     return Stack(
       alignment: .bottomCenter,
       children: [
         TabBarView(
           controller: widget.tabController,
           physics: const NeverScrollableScrollPhysics(),
-          children: [
-            ImageArea(
-              source: widget.primaryTab.source,
-              isMonochrome: widget.showMonochrome,
-            ),
-            ...widget.otherTabs.mapIndexed(
-              (index, galleryEntry) => ImageArea(
-                source: galleryEntry.source,
-                isMonochrome: widget.showMonochrome,
-              ),
-            ),
-          ],
+          children: mediaAreas
         ),
         PinnableFloatingToolbar(
           isPinned: widget.areControlsPinned,
@@ -698,13 +693,13 @@ class _ImageAreaState extends State<ImageArea> {
                     colorFilter: grayscaleFilter,
                     child: Image.file(
                       widget.source,
-                      gaplessPlayback: true,
+                      gaplessPlayback: false,
                       fit: .contain,
                     ),
                   )
                 : Image.file(
                     widget.source,
-                    gaplessPlayback: true,
+                    gaplessPlayback: false,
                     fit: .contain,
                   ),
           ),

@@ -47,26 +47,33 @@ class MediaGrid extends StatelessWidget {
                         pixelRatio)
                     .ceil();
 
-            return ImageTile(
-              media: Image(
-                image: ResizeImage(
-                  FileImage(entry.source),
-                  width: resolution.width <= resolution.height
-                      ? itemResolution
-                      : null,
-                  height: resolution.width <= resolution.height
-                      ? null
-                      : itemResolution,
-                  policy: .fit,
-                  allowUpscaling: true,
-                ),
-                fit: .cover,
-              ),
-              index: index,
-              onTap: onSelect,
-              onTapShift: onSelectTab,
-              tags: entry.tags,
-            );
+            return !entry.isVideo
+                ? ImageTile(
+                    media: Image(
+                      image: ResizeImage(
+                        FileImage(entry.source),
+                        width: resolution.width <= resolution.height
+                            ? itemResolution
+                            : null,
+                        height: resolution.width <= resolution.height
+                            ? null
+                            : itemResolution,
+                        policy: .fit,
+                        allowUpscaling: true,
+                      ),
+                      fit: .cover,
+                    ),
+                    index: index,
+                    onTap: onSelect,
+                    onTapShift: onSelectTab,
+                    tags: entry.tags,
+                  )
+                : ImageTile.thumbnailUnavailable(
+                    index: index,
+                    onTap: onSelect,
+                    onTapShift: onSelectTab,
+                    tags: entry.tags,
+                  );
           },
         );
       },
@@ -92,7 +99,7 @@ class ImageTile extends StatefulWidget {
     required this.onTap,
     required this.onTapShift,
     this.tags = const [],
-  }) : media = Icon(Icons.image);
+  }) : media = FittedBox(fit: .cover, child: Icon(Icons.image));
 
   final Widget media;
   final int index;

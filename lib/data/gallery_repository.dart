@@ -15,16 +15,17 @@ class GalleryRepository {
       return;
     }
 
-    final images = loadImagesFromDirectory(path);
+    final medias = loadMediaFromDirectory(path);
 
     List<GalleryEntry> gallery = [];
-    await for (final image in images) {
-      final lastModified = await image.lastModified();
+    await for (final media in medias) {
+      final lastModified = await media.lastModified();
 
       gallery.add(
         GalleryEntry(
-          name: basename(image.path),
-          source: image,
+          name: basename(media.path),
+          source: media,
+          isVideo: isVideo(media),
           // TODO: use something to get the size of an image.
           resolution: Size(400, 400),
           lastModified: lastModified,
