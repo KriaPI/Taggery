@@ -708,3 +708,82 @@ class _ImageAreaState extends State<ImageArea> {
     );
   }
 }
+
+
+/// A widget that allows for panning, zooming, and applying a monochrome filter on a video.
+class VideoArea extends StatefulWidget {
+  const VideoArea({
+    super.key,
+    required this.source,
+    required this.isMonochrome,
+  });
+  final File source;
+  final bool isMonochrome;
+
+  @override
+  State<VideoArea> createState() => _VideoAreaState();
+}
+
+class _VideoAreaState extends State<VideoArea> {
+  late final TransformationController _transformationController;
+  bool _isZoomedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _transformationController = TransformationController();
+    _transformationController.addListener(_onTransformationChanged);
+  }
+
+  void _onTransformationChanged() {
+    final double scale = _transformationController.value.getMaxScaleOnAxis();
+    final bool zoomedIn = scale > 1.05;
+
+    if (zoomedIn != _isZoomedIn) {
+      setState(() {
+        _isZoomedIn = zoomedIn;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _transformationController.removeListener(_onTransformationChanged);
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: _isZoomedIn
+          ? SystemMouseCursors.allScroll
+          : SystemMouseCursors.basic,
+      child: ClipRRect(
+        borderRadius: .circular(8.0),
+        child: InteractiveViewer(
+          transformationController: _transformationController,
+          clipBehavior: Clip.antiAlias,
+          minScale: 1.0,
+          maxScale: 10.0,
+          child: SizedBox.expand(
+            child: widget.isMonochrome
+                ? ColorFiltered(
+                    colorFilter: grayscaleFilter,
+                    child: Image.file(
+                      widget.source,
+                      gaplessPlayback: false,
+                      fit: .contain,
+                    ),
+                  )
+                : Image.file(
+                    widget.source,
+                    gaplessPlayback: false,
+                    fit: .contain,
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
