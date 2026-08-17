@@ -469,6 +469,7 @@ class _ImageViewerState extends State<ImageViewer> {
               source: tab.source,
               isMonochrome: widget.showMonochrome,
               videoController: videoController,
+              onTap: () => player.playOrPause(),
             )
           : ImageArea(source: tab.source, isMonochrome: widget.showMonochrome);
     }).toList();
@@ -482,6 +483,7 @@ class _ImageViewerState extends State<ImageViewer> {
           physics: const NeverScrollableScrollPhysics(),
           children: mediaAreas,
         ),
+        // TODO: add an animated play/pause icon here
         // TODO: break into its own widget.
         PinnableFloatingToolbar(
           isPinned: widget.areControlsPinned,
@@ -795,10 +797,12 @@ class VideoArea extends StatefulWidget {
     required this.source,
     required this.isMonochrome,
     required this.videoController,
+    required this.onTap
   });
   final File source;
   final bool isMonochrome;
   final VideoController videoController;
+  final VoidCallback onTap;
 
   @override
   State<VideoArea> createState() => _VideoAreaState();
@@ -841,21 +845,24 @@ class _VideoAreaState extends State<VideoArea> {
       controls: NoVideoControls,
     );
 
-    return MouseRegion(
-      cursor: _isZoomedIn
-          ? SystemMouseCursors.allScroll
-          : SystemMouseCursors.basic,
-      child: ClipRRect(
-        borderRadius: .circular(8.0),
-        child: InteractiveViewer(
-          transformationController: _transformationController,
-          clipBehavior: Clip.antiAlias,
-          minScale: 1.0,
-          maxScale: 10.0,
-          child: SizedBox.expand(
-            child: widget.isMonochrome
-                ? ColorFiltered(colorFilter: grayscaleFilter, child: video)
-                : video,
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: MouseRegion(
+        cursor: _isZoomedIn
+            ? SystemMouseCursors.allScroll
+            : SystemMouseCursors.basic,
+        child: ClipRRect(
+          borderRadius: .circular(8.0),
+          child: InteractiveViewer(
+            transformationController: _transformationController,
+            clipBehavior: Clip.antiAlias,
+            minScale: 1.0,
+            maxScale: 10.0,
+            child: SizedBox.expand(
+              child: widget.isMonochrome
+                  ? ColorFiltered(colorFilter: grayscaleFilter, child: video)
+                  : video,
+            ),
           ),
         ),
       ),
