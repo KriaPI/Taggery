@@ -197,7 +197,7 @@ class _ContentAreaState extends State<ContentArea> {
   /// Open the image at [index] in the viewer.
   void open(int index) {
     final gallery = context.read<GalleryCubit>().state;
-    if (gallery is GalleryLoadSuccess) {
+    if (gallery is GalleryLoadSuccess && !gallery.content[index].isVideo) {
       final File toOpen = gallery.content[index].source;
       precacheImage(FileImage(toOpen), context);
     }
@@ -213,7 +213,9 @@ class _ContentAreaState extends State<ContentArea> {
     final gallery = context.read<GalleryCubit>().state;
     if (gallery is GalleryLoadSuccess) {
       final newTab = gallery.content[index];
-      precacheImage(FileImage(newTab.source), context);
+      if (!gallery.content[index].isVideo) {
+        precacheImage(FileImage(newTab.source), context);
+      }
       context.read<TabCubit>().openTab(newTab);
     }
 
@@ -250,8 +252,6 @@ class _ContentAreaState extends State<ContentArea> {
     return current != length - 1 ? current + 1 : 0;
   }
 
-
-  // TODO: disable image precache if the media is a video.
   void previous() {
     final gallery = context.read<GalleryCubit>().state;
 
@@ -260,8 +260,10 @@ class _ContentAreaState extends State<ContentArea> {
       final galleryLength = gallery.content.length;
       int newIndex = getPreviousIndex(primaryTabIndex, galleryLength);
       final int previousIndex = getPreviousIndex(newIndex, galleryLength);
-      final File next = gallery.content[previousIndex].source;
-      precacheImage(FileImage(next), context);
+      if (!gallery.content[previousIndex].isVideo) {
+        final File next = gallery.content[previousIndex].source;
+        precacheImage(FileImage(next), context);
+      }
 
       setState(() {
         primaryTabIndex = newIndex;
@@ -277,8 +279,10 @@ class _ContentAreaState extends State<ContentArea> {
       final galleryLength = gallery.content.length;
       int newIndex = getNextIndex(primaryTabIndex, galleryLength);
       final int nextIndex = getNextIndex(newIndex, galleryLength);
-      final File next = gallery.content[nextIndex].source;
-      precacheImage(FileImage(next), context);
+      if (!gallery.content[nextIndex].isVideo) {
+        final File next = gallery.content[nextIndex].source;
+        precacheImage(FileImage(next), context);
+      }
 
       setState(() {
         primaryTabIndex = newIndex;
