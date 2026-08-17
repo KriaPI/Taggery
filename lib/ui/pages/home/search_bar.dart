@@ -5,9 +5,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taggery/logic/gallery.dart';
 import 'package:taggery/logic/search.dart';
 
-
 class TaggerySearchBar extends StatefulWidget {
-  const TaggerySearchBar({super.key, required this.focusNode, required this.searchController});
+  const TaggerySearchBar({
+    super.key,
+    required this.focusNode,
+    required this.searchController,
+  });
   final FocusNode focusNode;
   final SearchController searchController;
 
@@ -16,7 +19,6 @@ class TaggerySearchBar extends StatefulWidget {
 }
 
 class _TaggerySearchBarState extends State<TaggerySearchBar> {
-
   @override
   void initState() {
     super.initState();
@@ -51,6 +53,7 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
             },
           ),
           onTap: () {
+            refreshResults();
             controller.openView();
           },
           onChanged: (value) {
@@ -112,10 +115,8 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
   }
 
   void refreshResults() {
-    if (widget.searchController.isOpen) {
-      context.read<SearchSuggestionCubit>().loadSearchOptions(
-        widget.searchController.text,
-      );
-    }
+    context.read<SearchSuggestionCubit>().loadSearchOptions(
+      widget.searchController.text,
+    );
   }
 }

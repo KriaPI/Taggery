@@ -15,7 +15,7 @@ class SearchSuggestionCubit extends Cubit<SearchState> {
 
   final SearchRepository searchRepository;
   final SettingsRepository settingsRepository;
-
+  
   Future<void> loadSearchOptions(String query) async {
     emit(state.copyWith(status: SearchStatus.loading));
 
