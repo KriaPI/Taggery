@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class TitleTextSmall extends StatelessWidget {
   const TitleTextSmall(this.text, {super.key});
