@@ -41,23 +41,16 @@ class MediaGrid extends StatelessWidget {
           itemCount: gallery.length,
           itemBuilder: (context, index) {
             final GalleryEntry entry = gallery[index];
-            final resolution = entry.resolution;
-            final itemResolution =
-                ((arbitraryMinimumCellSize / resolution.aspectRatio) *
-                        pixelRatio)
-                    .ceil();
+            final itemWidth = ((arbitraryMinimumCellSize) * pixelRatio).ceil();
+            final itemHeight = ((arbitraryMinimumCellSize) * pixelRatio).ceil();
 
             return !entry.isVideo
                 ? ImageTile(
                     media: Image(
                       image: ResizeImage(
                         FileImage(entry.source),
-                        width: resolution.width <= resolution.height
-                            ? itemResolution
-                            : null,
-                        height: resolution.width <= resolution.height
-                            ? null
-                            : itemResolution,
+                        width: itemWidth,
+                        height: itemHeight,
                         policy: .fit,
                         allowUpscaling: true,
                       ),

@@ -22,7 +22,9 @@ void main() {
   final searchRepository = SearchRepository();
   final settingsCubit = SettingsCubit(settingsRepository);
   WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized();
+  MediaKit.ensureInitialized(
+    
+  );
 
   final routes = GoRouter(
     routes: [
