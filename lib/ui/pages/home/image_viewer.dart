@@ -492,6 +492,7 @@ class _ImageViewerState extends State<ImageViewer> {
             setState(() {});
           },
           onTapPinOrUnpin: () {
+            // TODO: fix issue where unpinned controls revert to pinned when moving to another item in the primary tab.
             widget.onTogglePinControls();
             setState(() {});
           },
@@ -802,6 +803,7 @@ class _VideoTimelineState extends State<VideoTimeline> {
             ? 1.0
             : videoDuration.inMilliseconds / 1000.0;
 
+        /// TODO: add value indicator when selecting and when hovering.
         return SizedBox(
           height: 24,
           width: null,
