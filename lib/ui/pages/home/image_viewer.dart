@@ -299,7 +299,7 @@ class _ViewerTabBarState extends State<ViewerTabBar> {
                 });
               },
               onClose: () {
-                widget.onCloseTab(index - 1);
+                widget.onCloseTab(index);
               },
               isClosable: index != 0,
               isSelected: index == selectedIndex,
@@ -892,13 +892,13 @@ class _ImageAreaState extends State<ImageArea> {
                     colorFilter: grayscaleFilter,
                     child: Image.file(
                       widget.source,
-                      gaplessPlayback: false,
+                      gaplessPlayback: true,
                       fit: .contain,
                     ),
                   )
                 : Image.file(
                     widget.source,
-                    gaplessPlayback: false,
+                    gaplessPlayback: true,
                     fit: .contain,
                   ),
           ),
