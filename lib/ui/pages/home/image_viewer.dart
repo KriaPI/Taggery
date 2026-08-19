@@ -69,7 +69,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 
   @override
   Widget build(BuildContext context) {
-    // TODO: figure out how to add pause/play as a keyboard shortcut.
+    // TODO: Move actions to imageViewer.
     return Actions(
       actions: viewerActions,
       child: GestureDetector(
@@ -480,11 +480,17 @@ class _ImageViewerState extends State<ImageViewer> {
         final isCurrentlyVideo = _currentTabShowsVideo();
 
         final imageControls = ImageControls(
+          // TODO: implement the rest of these callbacks.
           onTapPageFit: () {},
           onTapBWFilter: widget.onToggleMonochrome,
           onTapColorPicker: () {},
           onTapDetails: () {},
-          onTapOpenInNewTab: () {},
+          onTapOpenInNewTab: () {
+            final tabCubit = context.read<TabCubit>();
+            final currentTab = tabCubit.state[widget.tabController.index];
+            tabCubit.addTab(currentTab);
+            setState(() {});
+          },
           onTapPinOrUnpin: () {
             widget.onTogglePinControls();
             setState(() {});
@@ -492,6 +498,7 @@ class _ImageViewerState extends State<ImageViewer> {
           monochromeToggled: widget.showMonochrome,
           isPinned: widget.areControlsPinned,
           disableFitOption: isCurrentlyVideo,
+          disableOpenInNewTabOption: widget.tabController.index != 0,
           compact: isCurrentlyVideo,
         );
         final videoControls = VideoControls(
@@ -651,6 +658,7 @@ class ImageControls extends StatelessWidget {
     required this.isPinned,
     this.fit = PageFit.page,
     this.disableFitOption = false,
+    this.disableOpenInNewTabOption = false,
     this.compact = false,
   });
   final bool compact;
@@ -663,6 +671,7 @@ class ImageControls extends StatelessWidget {
 
   final PageFit fit;
   final bool disableFitOption;
+  final bool disableOpenInNewTabOption;
   final bool monochromeToggled;
   final bool isPinned;
 
@@ -699,11 +708,13 @@ class ImageControls extends StatelessWidget {
         icon: Icon(Symbols.info_i_rounded),
         onPressed: onTapDetails,
       ),
-      IconButton(
-        tooltip: "Open in new tab",
-        icon: Icon(Icons.open_in_new_rounded),
-        onPressed: onTapOpenInNewTab,
-      ),
+      if (!disableOpenInNewTabOption) ...[
+        IconButton(
+          tooltip: "Open in new tab",
+          icon: Icon(Icons.open_in_new_rounded),
+          onPressed: onTapOpenInNewTab,
+        ),
+      ],
       IconButton(
         tooltip: isPinned ? "Unpin" : "Pin",
         selectedIcon: Icon(Icons.arrow_drop_down_rounded),
