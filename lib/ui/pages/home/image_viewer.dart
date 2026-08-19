@@ -129,6 +129,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
               Expanded(
                 child: BlocBuilder<TabCubit, List<TabState>>(
                   builder: (context, tabs) => ImageViewer(
+                    key: ValueKey(widget.primaryIndex),
                     tabController: _tabController,
                     onPrevious: widget.onPrevious,
                     onNext: widget.onNext,
@@ -497,7 +498,7 @@ class _ImageViewerState extends State<ImageViewer> {
           player: player,
           compact: isCurrentlyVideo,
         );
-        final videoTimeline = VideoTimeline(player: player);
+        final videoTimeline = VideoTimeline(key: UniqueKey(), player: player);
 
         final controls = isCurrentlyVideo
             ? Column(
@@ -561,9 +562,11 @@ class _ImageViewerState extends State<ImageViewer> {
     if (oldWidget.tabController != widget.tabController) {
       oldWidget.tabController.removeListener(_handleTabSelection);
       widget.tabController.addListener(_handleTabSelection);
-    }
 
-    // This must be called in order for videos to get loaded properly.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        conditionallyPlayVideo();
+      });
+    }
   }
 
   @override
@@ -601,7 +604,7 @@ class _ImageViewerState extends State<ImageViewer> {
         start: tab.passedDuration,
       );
 
-      await player.open(playable, play: playImmediately);
+      await player.open(playable, play: tab.isPlaying || playImmediately);
       await player.setVolume(tab.volume);
     }
   }
@@ -617,13 +620,16 @@ class _ImageViewerState extends State<ImageViewer> {
     if (previousTab is VideoTabState) {
       _saveVideoState(
         previousIndex,
-        previousTab.copyWith(player.state.position, player.state.volume),
+        previousTab.copyWith(
+          player.state.position,
+          player.state.volume,
+          player.state.playing,
+        ),
       );
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      player.setPlaylistMode(.loop);
-      conditionallyPlayVideo(playImmediately: true);
+      conditionallyPlayVideo();
     });
     setState(() {});
   }
@@ -772,8 +778,6 @@ class VideoTimeline extends StatefulWidget {
 class _VideoTimelineState extends State<VideoTimeline> {
   bool wasPausedBeforeChange = false;
 
-  // TODO: fix issue where timeline is set to zero initially and then jumps to correct 
-  // position when switching tabs.
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(

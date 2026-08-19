@@ -17,6 +17,7 @@ class VideoTabState extends TabState {
     required super.content,
     this.passedDuration = const Duration(seconds: 0),
     this.volume = 0.0,
+    this.isPlaying = true,
   });
 
   /// Retrieve the duration of time that has passed since the source started playing.
@@ -25,11 +26,15 @@ class VideoTabState extends TabState {
   /// A volume of 0 (muted) to 100.
   double volume;
 
-  VideoTabState copyWith(Duration? passedDuration, double? volume) {
+  bool isPlaying;
+
+
+  VideoTabState copyWith(Duration? passedDuration, double? volume, bool? isPlaying) {
     return VideoTabState(
       content: content,
       passedDuration: passedDuration ?? this.passedDuration,
       volume: volume ?? this.volume,
+      isPlaying: isPlaying ?? this.isPlaying
     );
   }
 }
