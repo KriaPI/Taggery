@@ -28,13 +28,16 @@ class VideoTabState extends TabState {
 
   bool isPlaying;
 
-
-  VideoTabState copyWith(Duration? passedDuration, double? volume, bool? isPlaying) {
+  VideoTabState copyWith(
+    Duration? passedDuration,
+    double? volume,
+    bool? isPlaying,
+  ) {
     return VideoTabState(
       content: content,
       passedDuration: passedDuration ?? this.passedDuration,
       volume: volume ?? this.volume,
-      isPlaying: isPlaying ?? this.isPlaying
+      isPlaying: isPlaying ?? this.isPlaying,
     );
   }
 }
@@ -62,6 +65,26 @@ class TabCubit extends Cubit<List<TabState>> {
     final tab = tabContent.isVideo
         ? VideoTabState(content: tabContent)
         : TabState(content: tabContent);
+
+    switch (state.length) {
+      case 0:
+        emit([tab, tab]);
+        break;
+      case 1:
+        emit([...state, tab]);
+        break;
+      default:
+        {
+          // We need to make a copy since the state is only compared through shallow equality.
+          final copy = [...state];
+          copy.insert(1, tab);
+          emit(copy);
+        }
+    }
+  }
+
+  /// Add [tab] to the list of tabs.
+  void addTab(TabState tab) {
 
     switch (state.length) {
       case 0:
