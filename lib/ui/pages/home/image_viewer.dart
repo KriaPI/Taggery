@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:taggery/models/gallery.dart';
 import 'package:taggery/logic/tabs.dart';
 import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/toolbar.dart';
@@ -21,8 +20,6 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 ]);
 // dart format on
 
-// TODO: replace primary tab with an entry in the tab cubit.
-
 /// This widget contains the header for the viewer and the viewer itself as a child.
 ///
 /// The header includes the close button, the tab bar, and the maximize/minimize button. This widget manages
@@ -33,7 +30,7 @@ class ImageViewerContainer extends StatefulWidget {
     super.key,
     required this.focusNode,
     required this.isInFullview,
-    required this.primaryTab,
+    required this.primaryIndex,
     required this.onPrevious,
     required this.onNext,
     required this.onClose,
@@ -43,8 +40,8 @@ class ImageViewerContainer extends StatefulWidget {
   final FocusNode focusNode;
   final bool isInFullview;
 
-  /// The tab shown when first opening the viewer.
-  final GalleryEntry primaryTab;
+  /// The index of the gallery entry shown in the first tab. This is used to compare in didWidgetUpdate().
+  final int primaryIndex;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onClose;
@@ -102,14 +99,13 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
                           // Update the length of the tab controller to match the cubit.
                           // The length is +1 because there is always an additional tab open
                           // that allows the user to navigate between gallery items (images/videos).
-                          _updateTabController(state.length + 1);
+                          _updateTabController(state.length);
                         },
                         builder: (context, tabs) => ViewerTabBar(
                           tabController: _tabController,
-                          tabTitles: [
-                            widget.primaryTab.name,
-                            ...tabs.map((entry) => entry.content.name),
-                          ],
+                          tabTitles: tabs
+                              .map((entry) => entry.content.name)
+                              .toList(),
                           onCloseTab: (index) {
                             context.read<TabCubit>().closeTab(index);
                           },
@@ -133,12 +129,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
               Expanded(
                 child: BlocBuilder<TabCubit, List<TabState>>(
                   builder: (context, tabs) => ImageViewer(
-                    tabs: [
-                      widget.primaryTab.isVideo
-                          ? VideoTabState(content: widget.primaryTab)
-                          : TabState(content: widget.primaryTab),
-                      ...tabs,
-                    ],
                     tabController: _tabController,
                     onPrevious: widget.onPrevious,
                     onNext: widget.onNext,
@@ -159,24 +149,27 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 
   @override
   void initState() {
+    int tabCount = context.read<TabCubit>().state.length;
+    _tabController = TabController(
+      length: tabCount,
+      vsync: this,
+      animationDuration: Duration.zero,
+    );
+
     viewerActions = {
-      PreviousIntent: CallbackAction<PreviousIntent>(
-        onInvoke: (intent) => widget.onPrevious(),
-      ),
-      NextIntent: CallbackAction<NextIntent>(
-        onInvoke: (intent) => widget.onNext(),
-      ),
+      if (_tabController.index == 0) ...{
+        PreviousIntent: CallbackAction<PreviousIntent>(
+          onInvoke: (intent) => widget.onPrevious(),
+        ),
+        NextIntent: CallbackAction<NextIntent>(
+          onInvoke: (intent) => widget.onNext(),
+        ),
+      },
       CloseIntent: CallbackAction<CloseIntent>(
         onInvoke: (intent) => widget.onClose(),
       ),
     };
 
-    int tabCount = context.read<TabCubit>().state.length;
-    _tabController = TabController(
-      length: tabCount + 1,
-      vsync: this,
-      animationDuration: Duration.zero,
-    );
     _tabController.addListener(_updateShortCuts);
     super.initState();
   }
@@ -193,7 +186,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
     super.didUpdateWidget(oldWidget);
     // Show the primary tab if the user opens a new image while
     // having a different tab open.
-    if (oldWidget.primaryTab != widget.primaryTab) {
+    if (oldWidget.primaryIndex != widget.primaryIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _tabController.index = 0;
       });
@@ -436,7 +429,6 @@ class ViewerTab extends StatelessWidget {
 class ImageViewer extends StatefulWidget {
   const ImageViewer({
     super.key,
-    required this.tabs,
     required this.tabController,
     required this.onPrevious,
     required this.onNext,
@@ -446,7 +438,6 @@ class ImageViewer extends StatefulWidget {
     required this.areControlsPinned,
     required this.showMonochrome,
   });
-  final List<TabState> tabs;
   final TabController tabController;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -461,96 +452,104 @@ class ImageViewer extends StatefulWidget {
 }
 
 class _ImageViewerState extends State<ImageViewer> {
-  late final player = Player(configuration: PlayerConfiguration(logLevel: MPVLogLevel.error));
+  late final player = Player(
+    configuration: PlayerConfiguration(logLevel: MPVLogLevel.error),
+  );
   late final videoController = VideoController(player);
 
   @override
   Widget build(BuildContext context) {
-    final tabs = widget.tabs;
-    final mediaAreas = tabs.map((tab) {
-      return tab is VideoTabState
-          ? VideoArea(
-              source: tab.source,
-              isMonochrome: widget.showMonochrome,
-              videoController: videoController,
-              onTap: () => player.playOrPause(),
-            )
-          : ImageArea(source: tab.source, isMonochrome: widget.showMonochrome);
-    }).toList();
+    return BlocBuilder<TabCubit, List<TabState>>(
+      builder: (context, state) {
+        final tabs = state;
+        final mediaAreas = tabs.map((tab) {
+          return tab is VideoTabState
+              ? VideoArea(
+                  source: tab.source,
+                  isMonochrome: widget.showMonochrome,
+                  videoController: videoController,
+                  onTap: () => player.playOrPause(),
+                )
+              : ImageArea(
+                  source: tab.source,
+                  isMonochrome: widget.showMonochrome,
+                );
+        }).toList();
 
-    final isCurrentlyVideo = _currentTabShowsVideo();
+        final isCurrentlyVideo = _currentTabShowsVideo();
 
-    final imageControls = ImageControls(
-      onTapPageFit: () {},
-      onTapBWFilter: widget.onToggleMonochrome,
-      onTapColorPicker: () {},
-      onTapDetails: () {},
-      onTapOpenInNewTab: () {},
-      onTapPinOrUnpin: () {
-        widget.onTogglePinControls();
-        setState(() {});
-      },
-      monochromeToggled: widget.showMonochrome,
-      isPinned: widget.areControlsPinned,
-      disableFitOption: isCurrentlyVideo,
-      compact: isCurrentlyVideo,
-    );
-    final videoControls = VideoControls(
-      player: player,
-      compact: isCurrentlyVideo,
-    );
-    final videoTimeline = VideoTimeline(player: player);
+        final imageControls = ImageControls(
+          onTapPageFit: () {},
+          onTapBWFilter: widget.onToggleMonochrome,
+          onTapColorPicker: () {},
+          onTapDetails: () {},
+          onTapOpenInNewTab: () {},
+          onTapPinOrUnpin: () {
+            widget.onTogglePinControls();
+            setState(() {});
+          },
+          monochromeToggled: widget.showMonochrome,
+          isPinned: widget.areControlsPinned,
+          disableFitOption: isCurrentlyVideo,
+          compact: isCurrentlyVideo,
+        );
+        final videoControls = VideoControls(
+          player: player,
+          compact: isCurrentlyVideo,
+        );
+        final videoTimeline = VideoTimeline(player: player);
 
-    final controls = isCurrentlyVideo
-        ? Column(
-            mainAxisAlignment: .end,
-            children: [
-              videoTimeline,
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                child: Row(
-                  mainAxisAlignment: .spaceBetween,
-                  children: [videoControls, imageControls],
+        final controls = isCurrentlyVideo
+            ? Column(
+                mainAxisAlignment: .end,
+                children: [
+                  videoTimeline,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                    child: Row(
+                      mainAxisAlignment: .spaceBetween,
+                      children: [videoControls, imageControls],
+                    ),
+                  ),
+                ],
+              )
+            : Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 16.0,
                 ),
-              ),
-            ],
-          )
-        : Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24.0,
-              vertical: 16.0,
-            ),
-            child: imageControls,
-          );
+                child: imageControls,
+              );
 
-    return Stack(
-      alignment: .bottomCenter,
-      children: [
-        TabBarView(
-          controller: widget.tabController,
-          physics: const NeverScrollableScrollPhysics(),
-          children: mediaAreas,
-        ),
-        Column(
-          mainAxisSize: .min,
+        return Stack(
+          alignment: .bottomCenter,
           children: [
-            Pinnable(isPinned: widget.areControlsPinned, child: controls),
+            TabBarView(
+              controller: widget.tabController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: mediaAreas,
+            ),
+            Column(
+              mainAxisSize: .min,
+              children: [
+                Pinnable(isPinned: widget.areControlsPinned, child: controls),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
   @override
   void initState() {
     super.initState();
-    player.setPlaylistMode(.loop);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      player.setPlaylistMode(.loop);
+      conditionallyPlayVideo(playImmediately: true);
+    });
 
-    /// TODO: set based on tab volume/muted by default setting.
-    player.setVolume(0.0);
-    conditionallyPlayVideo();
-
-    // Listen to tab selection changes to rebuild the toolbar.
+    // Listen to tab selection changes to rebuild the toolbar and load videos.
     widget.tabController.addListener(_handleTabSelection);
   }
 
@@ -564,17 +563,8 @@ class _ImageViewerState extends State<ImageViewer> {
       widget.tabController.addListener(_handleTabSelection);
     }
 
-    final oldOpenedTab = oldWidget.tabs[oldWidget.tabController.index];
-    final newOpenedTab = widget.tabs[widget.tabController.index];
-
-    if (oldOpenedTab.source != newOpenedTab.source) {
-      debugPrint("Changed tab");
-      conditionallyPlayVideo();
-    }
+    // This must be called in order for videos to get loaded properly.
   }
-
-  // TODO: save the duration of the currently viewed video when the viewer is closed or when switching to
-  // Another tab.
 
   @override
   void dispose() {
@@ -591,27 +581,51 @@ class _ImageViewerState extends State<ImageViewer> {
 
   /// True if the tab with index [index] has a video as its source.
   bool _tabShowsVideo(int index) {
-    return widget.tabs[index] is VideoTabState;
+    final tabs = context.read<TabCubit>().state;
+    return tabs[index] is VideoTabState;
   }
 
-  void _saveVideoState(TabState tab) {}
+  void _saveVideoState(int index, TabState state) {
+    context.read<TabCubit>().saveTabState(index, state);
+  }
 
   /// If the currently opened tab's source is a video, make the neccessary setup to play the video.
-  void conditionallyPlayVideo() {
+  Future<void> conditionallyPlayVideo({bool playImmediately = false}) async {
     final currentTabIndex = widget.tabController.index;
 
     if (_tabShowsVideo(currentTabIndex)) {
-      final tab = widget.tabs[currentTabIndex];
-      final playable = Media(tab.source.uri.toString());
-      player.open(playable, play: true);
+      final tabs = context.read<TabCubit>().state;
+      final tab = tabs[currentTabIndex] as VideoTabState;
+      final playable = Media(
+        tab.source.uri.toString(),
+        start: tab.passedDuration,
+      );
+
+      await player.open(playable, play: playImmediately);
+      await player.setVolume(tab.volume);
     }
   }
 
   void _handleTabSelection() {
-    if (mounted) {
-      conditionallyPlayVideo();
-      setState(() {});
+    if (!mounted) return;
+    if (widget.tabController.indexIsChanging) return;
+
+    final previousIndex = widget.tabController.previousIndex;
+    final tabs = context.read<TabCubit>().state;
+    final previousTab = tabs[previousIndex];
+
+    if (previousTab is VideoTabState) {
+      _saveVideoState(
+        previousIndex,
+        previousTab.copyWith(player.state.position, player.state.volume),
+      );
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      player.setPlaylistMode(.loop);
+      conditionallyPlayVideo(playImmediately: true);
+    });
+    setState(() {});
   }
 }
 
@@ -758,6 +772,8 @@ class VideoTimeline extends StatefulWidget {
 class _VideoTimelineState extends State<VideoTimeline> {
   bool wasPausedBeforeChange = false;
 
+  // TODO: fix issue where timeline is set to zero initially and then jumps to correct 
+  // position when switching tabs.
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
@@ -788,7 +804,9 @@ class _VideoTimelineState extends State<VideoTimeline> {
             },
             onChanged: (value) {
               final duration = Duration(milliseconds: (value * 1000).round());
-              widget.player.seek(duration);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                widget.player.seek(duration);
+              });
             },
           ),
         );

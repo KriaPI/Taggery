@@ -51,9 +51,9 @@ class _ContentAreaState extends State<ContentArea> {
           return switch (state) {
             GalleryLoadSuccess() => ImageViewerContainer(
               key: _viewerKey,
+              primaryIndex: primaryTabIndex,
               focusNode: _viewerFocusNode,
               isInFullview: _viewMode == .viewerExpanded,
-              primaryTab: state.content[primaryTabIndex],
               onPrevious: () => previous(),
               onNext: () => next(),
               onClose: closeViewer,
@@ -194,39 +194,6 @@ class _ContentAreaState extends State<ContentArea> {
     }
   }
 
-  /// Open the image at [index] in the viewer.
-  void open(int index) {
-    final gallery = context.read<GalleryCubit>().state;
-    if (gallery is GalleryLoadSuccess && !gallery.content[index].isVideo) {
-      final File toOpen = gallery.content[index].source;
-      precacheImage(FileImage(toOpen), context);
-    }
-
-    setState(() {
-      primaryTabIndex = index;
-      _viewMode = .splitView;
-    });
-  }
-
-  /// Open the image at [index] as a tab in the viewer.
-  void openInTab(int index) {
-    final gallery = context.read<GalleryCubit>().state;
-    if (gallery is GalleryLoadSuccess) {
-      final newTab = gallery.content[index];
-      if (!gallery.content[index].isVideo) {
-        precacheImage(FileImage(newTab.source), context);
-      }
-      context.read<TabCubit>().openTab(newTab);
-    }
-
-    if (_viewMode != ContentAreaViewMode.splitView) {
-      setState(() {
-        primaryTabIndex = index;
-        _viewMode = .splitView;
-      });
-    }
-  }
-
   void expandOrMinimizeViewer() {
     if (_viewMode == .splitView) {
       setState(() {
@@ -242,28 +209,60 @@ class _ContentAreaState extends State<ContentArea> {
     }
   }
 
-  /// Assumes the boundaries are [0, length - 1].
-  int getPreviousIndex(int current, int length) {
-    return current != 0 ? current - 1 : length - 1;
+  /// Open the image at [index] in the viewer.
+  void open(int index) {
+    final gallery = context.read<GalleryCubit>().state;
+    if (gallery is GalleryLoadSuccess) {
+      final content = gallery.content[index];
+
+      if (!content.isVideo) {
+        precacheImage(FileImage(content.source), context);
+      }
+
+      context.read<TabCubit>().open(content);
+    }
+
+    setState(() {
+      primaryTabIndex = index;
+      _viewMode = .splitView;
+    });
   }
 
-  /// Assumes the boundaries are [0, length].
-  int getNextIndex(int current, int length) {
-    return current != length - 1 ? current + 1 : 0;
+  /// Open the image at [index] as a tab in the viewer.
+  void openInTab(int index) {
+    final gallery = context.read<GalleryCubit>().state;
+    if (gallery is GalleryLoadSuccess) {
+      final content = gallery.content[index];
+
+      if (!content.isVideo) {
+        precacheImage(FileImage(content.source), context);
+      }
+      context.read<TabCubit>().openTab(content);
+    }
+
+    if (_viewMode != ContentAreaViewMode.splitView) {
+      setState(() {
+        primaryTabIndex = index;
+        _viewMode = .splitView;
+      });
+    }
   }
 
   void previous() {
     final gallery = context.read<GalleryCubit>().state;
 
-    // Precache the image before the image at newIndex.
     if (gallery is GalleryLoadSuccess) {
       final galleryLength = gallery.content.length;
       int newIndex = getPreviousIndex(primaryTabIndex, galleryLength);
-      final int previousIndex = getPreviousIndex(newIndex, galleryLength);
-      if (!gallery.content[previousIndex].isVideo) {
-        final File next = gallery.content[previousIndex].source;
+      final int beforeNewIndex = getPreviousIndex(newIndex, galleryLength);
+
+      // Precache the image before the image at newIndex.
+      if (!gallery.content[beforeNewIndex].isVideo) {
+        final File next = gallery.content[beforeNewIndex].source;
         precacheImage(FileImage(next), context);
       }
+
+      context.read<TabCubit>().open(gallery.content[newIndex]);
 
       setState(() {
         primaryTabIndex = newIndex;
@@ -274,15 +273,18 @@ class _ContentAreaState extends State<ContentArea> {
   void next() {
     final gallery = context.read<GalleryCubit>().state;
 
-    // Precache the image after the image at newIndex.
     if (gallery is GalleryLoadSuccess) {
       final galleryLength = gallery.content.length;
       int newIndex = getNextIndex(primaryTabIndex, galleryLength);
-      final int nextIndex = getNextIndex(newIndex, galleryLength);
-      if (!gallery.content[nextIndex].isVideo) {
-        final File next = gallery.content[nextIndex].source;
+      final int afterNewIndex = getNextIndex(newIndex, galleryLength);
+
+      // Precache the image after the image at newIndex.
+      if (!gallery.content[afterNewIndex].isVideo) {
+        final File next = gallery.content[afterNewIndex].source;
         precacheImage(FileImage(next), context);
       }
+
+      context.read<TabCubit>().open(gallery.content[newIndex]);
 
       setState(() {
         primaryTabIndex = newIndex;
@@ -302,9 +304,21 @@ class _ContentAreaState extends State<ContentArea> {
         precacheImage(FileImage(first.source), context);
       }
 
+      context.read<TabCubit>().open(first);
+
       setState(() {
         primaryTabIndex = 0;
       });
     }
+  }
+
+  /// Assumes the boundaries are [0, length - 1].
+  int getPreviousIndex(int current, int length) {
+    return current != 0 ? current - 1 : length - 1;
+  }
+
+  /// Assumes the boundaries are [0, length].
+  int getNextIndex(int current, int length) {
+    return current != length - 1 ? current + 1 : 0;
   }
 }
