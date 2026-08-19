@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taggery/models/gallery.dart';
 
@@ -18,7 +17,6 @@ class VideoTabState extends TabState {
     required super.content,
     this.passedDuration = const Duration(seconds: 0),
     this.volume = 0.0,
-    this.loop = false,
   });
 
   /// Retrieve the duration of time that has passed since the source started playing.
@@ -26,20 +24,62 @@ class VideoTabState extends TabState {
 
   /// A volume of 0 (muted) to 100.
   double volume;
-  bool loop;
+
+  VideoTabState copyWith(Duration? passedDuration, double? volume) {
+    return VideoTabState(
+      content: content,
+      passedDuration: passedDuration ?? this.passedDuration,
+      volume: volume ?? this.volume,
+    );
+  }
 }
 
 /// Manages the viewer's tabs' state.
 class TabCubit extends Cubit<List<TabState>> {
   TabCubit() : super([]);
 
+  /// Open [tabContent]. Replaces the value of the first tab.
+  void open(GalleryEntry tabContent) {
+    final tab = tabContent.isVideo
+        ? VideoTabState(content: tabContent)
+        : TabState(content: tabContent);
+
+    if (state.isEmpty) {
+      emit([tab]);
+    } else {
+      state[0] = tab;
+      emit(state);
+    }
+  }
+
   /// Add a new tab with [tabContent] to the list of tabs.
   void openTab(GalleryEntry tabContent) {
-    if (tabContent.isVideo) {
-      emit([VideoTabState(content: tabContent), ...state]);
-    } else {
-      emit([TabState(content: tabContent), ...state]);
+    final tab = tabContent.isVideo
+        ? VideoTabState(content: tabContent)
+        : TabState(content: tabContent);
+
+    switch (state.length) {
+      case 0:
+        emit([tab, tab]);
+        break;
+      case 1:
+        emit([...state, tab]);
+        break;
+      default:
+        {
+          // We need to make a copy since the state is only compared through shallow equality.
+          final copy = [...state];
+          copy.insert(1, tab);
+          emit(copy);
+        }
     }
+  }
+
+  /// Assign the tab state at [index] in the list of tabs with [newstate] as its value.
+  void saveTabState(int index, TabState newState) {
+    final copy = [...state];
+    copy[index] = newState;
+    emit(copy);
   }
 
   /// Remove the tab at [index] within the list. Assumes that the index exists.
