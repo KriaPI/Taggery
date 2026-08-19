@@ -217,15 +217,15 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
   }
 
   /// Get the index of the tab that was opened.
-  int _getNewTabIndex(int newLength) {
-    return newLength >= 2 ? 1 : 0;
+  int _getNewTabIndex(int newLength, int previousIndex) {
+    return newLength >= 2 && previousIndex != 0 ? 1 : 0;
   }
 
   /// Update the length and currently viewed index of the tab controller.
   void _updateTabController(int newLength) {
     if (_tabController.length == newLength) return;
 
-    final newCurrentIndex = _getNewTabIndex(newLength);
+    final newCurrentIndex = _getNewTabIndex(newLength, _tabController.index);
     _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
 

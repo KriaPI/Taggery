@@ -71,12 +71,13 @@ class TabCubit extends Cubit<List<TabState>> {
         emit([tab, tab]);
         break;
       case 1:
-        emit([...state, tab]);
+        emit([tab, tab]);
         break;
       default:
         {
           // We need to make a copy since the state is only compared through shallow equality.
           final copy = [...state];
+          copy[0] = tab; 
           copy.insert(1, tab);
           emit(copy);
         }
@@ -91,7 +92,7 @@ class TabCubit extends Cubit<List<TabState>> {
         emit([tab, tab]);
         break;
       case 1:
-        emit([...state, tab]);
+        emit([tab, tab]);
         break;
       default:
         {
