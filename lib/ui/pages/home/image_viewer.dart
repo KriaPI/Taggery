@@ -828,6 +828,8 @@ class _VideoTimelineState extends State<VideoTimeline> {
   }
 }
 
+// TODO: fix zooming with trackpad. Should zoom to where the mouse is at, but instead zooms into the nearest corner.
+
 /// A widget that allows for panning, zooming, and applying a monochrome filter on an image.
 class ImageArea extends StatefulWidget {
   const ImageArea({
@@ -880,6 +882,7 @@ class _ImageAreaState extends State<ImageArea> {
       child: ClipRRect(
         borderRadius: .circular(8.0),
         child: InteractiveViewer(
+          constrained: true,
           transformationController: _transformationController,
           clipBehavior: Clip.antiAlias,
           minScale: 1.0,
