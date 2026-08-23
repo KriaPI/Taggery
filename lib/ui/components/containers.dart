@@ -36,7 +36,13 @@ class Pinnable extends StatefulWidget {
 }
 
 class _PinnableState extends State<Pinnable> {
-  bool _isShown = true;
+  late bool _isShown;
+
+  @override
+  void initState() {
+    super.initState();
+    _isShown = widget.isPinned;
+  }
 
   @override
   Widget build(BuildContext context) {
