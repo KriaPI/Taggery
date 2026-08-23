@@ -491,11 +491,7 @@ class _ImageViewerState extends State<ImageViewer> {
             tabCubit.addTab(currentTab);
             setState(() {});
           },
-          onTapPinOrUnpin: () {
-            // TODO: fix issue where unpinned controls revert to pinned when moving to another item in the primary tab.
-            widget.onTogglePinControls();
-            setState(() {});
-          },
+          onTapPinOrUnpin: widget.onTogglePinControls,
           monochromeToggled: widget.showMonochrome,
           isPinned: widget.areControlsPinned,
           disableFitOption: isCurrentlyVideo,
@@ -506,7 +502,7 @@ class _ImageViewerState extends State<ImageViewer> {
           player: player,
           compact: isCurrentlyVideo,
         );
-        final videoTimeline = VideoTimeline(key: UniqueKey(), player: player);
+        final videoTimeline = VideoTimeline(player: player);
 
         final controls = isCurrentlyVideo
             ? Column(

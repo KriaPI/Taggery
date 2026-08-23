@@ -71,7 +71,7 @@ class TabCubit extends Cubit<List<TabState>> {
         emit([tab, tab]);
         break;
       case 1:
-        emit([tab, tab]);
+        emit([...state, tab]);
         break;
       default:
         {
