@@ -426,6 +426,8 @@ class ViewerTab extends StatelessWidget {
   }
 }
 
+// TODO: fix bug where video playback state is not saved when the viewer is closed. 
+
 /// The widget containing the image and the media controls.
 class ImageViewer extends StatefulWidget {
   const ImageViewer({
