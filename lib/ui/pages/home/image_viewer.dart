@@ -405,21 +405,24 @@ class ViewerTab extends StatelessWidget {
               ? colorScheme.surfaceContainer.withValues(alpha: 0.7)
               : Colors.transparent);
 
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(8.0),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        onHover: onHover,
-        hoverColor: Colors.transparent,
-        splashColor: Colors.transparent,
+    return Tooltip(
+      message: name,
+      child: Material(
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(8.0),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 160),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          alignment: Alignment.centerLeft,
-          child: content,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          onHover: onHover,
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          borderRadius: BorderRadius.circular(8.0),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 160),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            alignment: Alignment.centerLeft,
+            child: content,
+          ),
         ),
       ),
     );
