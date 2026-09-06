@@ -26,23 +26,27 @@ class MediaGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        const crossAxisSpacing = 8.0;
         final crossAxisCount = (constraints.maxWidth / arbitraryMinimumCellSize)
             .round()
             .clamp(1, 10);
 
+        final cellWidth =
+            (constraints.maxWidth - (crossAxisSpacing * (crossAxisCount - 1))) /
+            crossAxisCount;
+
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 32.0,
-            // TODO: dynamically calculate the childaspectratio.
-            childAspectRatio: 0.9,
+            crossAxisSpacing: crossAxisSpacing,
+            mainAxisSpacing: 16.0,
+            mainAxisExtent: calculateMainAxisExtent(context, cellWidth),
           ),
           itemCount: gallery.length,
           itemBuilder: (context, index) {
             final GalleryEntry entry = gallery[index];
-            final itemWidth = ((arbitraryMinimumCellSize) * pixelRatio).ceil();
-            final itemHeight = ((arbitraryMinimumCellSize) * pixelRatio).ceil();
+            final itemWidth = ((cellWidth) * pixelRatio).ceil();
+            final itemHeight = itemWidth;
 
             return !entry.isVideo
                 ? ImageTile(
@@ -71,6 +75,28 @@ class MediaGrid extends StatelessWidget {
         );
       },
     );
+  }
+
+  double calculateMainAxisExtent(BuildContext context, double cellWidth) {
+    final textHeight = getTextHeight(style: DefaultTextStyle.of(context).style);
+    final padding = 8.0;
+    final imageHeight = cellWidth;
+
+    return imageHeight + padding + textHeight;
+  }
+
+  double getTextHeight({
+    required TextStyle style,
+    double maxWidth = double.infinity,
+    int maxLines = 1,
+  }) {
+    final textPainter = TextPainter(
+      text: TextSpan(text: "Hello", style: style),
+      maxLines: maxLines,
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: maxWidth);
+
+    return textPainter.size.height;
   }
 }
 
@@ -126,6 +152,18 @@ class _ImageTileState extends State<ImageTile> {
       ),
     );
 
+    final tile = Column(
+      crossAxisAlignment: .stretch,
+      spacing: 8.0,
+      children: [
+        thumbnail,
+        Text(
+          widget.tags.take(4).map((element) => "#$element ").join(),
+          overflow: .ellipsis,
+        ),
+      ],
+    );
+
     return GestureDetector(
       onTap: () {
         if (HardwareKeyboard.instance.isShiftPressed) {
@@ -141,17 +179,7 @@ class _ImageTileState extends State<ImageTile> {
         onExit: (_) => setState(() {
           isHoveredOver = false;
         }),
-        child: Column(
-          crossAxisAlignment: .stretch,
-          spacing: 8.0,
-          children: [
-            thumbnail,
-            Text(
-              widget.tags.take(4).map((element) => "#$element ").join(),
-              overflow: .ellipsis,
-            ),
-          ],
-        ),
+        child: tile,
       ),
     );
   }
