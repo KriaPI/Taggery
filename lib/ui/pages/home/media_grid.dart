@@ -9,16 +9,33 @@ const int arbitraryMinimumCellSize = 300;
 // TODO: keep scrolling even if the widget changes dimensions.
 
 // TODO: load images while scrolling, instead of loading everything at once.
-class MediaGrid extends StatelessWidget {
+class MediaGrid extends StatefulWidget {
   const MediaGrid({
     super.key,
     required this.onSelect,
     required this.onSelectTab,
     required this.gallery,
+    this.mainAxisSpacing = 16.0,
+    this.crossAxisSpacing = 8.0,
   });
   final void Function(int index) onSelect;
   final void Function(int index) onSelectTab;
   final List<GalleryEntry> gallery;
+  final double mainAxisSpacing;
+  final double crossAxisSpacing;
+
+  @override
+  State<MediaGrid> createState() => _MediaGridState();
+}
+
+class _MediaGridState extends State<MediaGrid> {
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,49 +43,52 @@ class MediaGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        const crossAxisSpacing = 8.0;
         final crossAxisCount = (constraints.maxWidth / arbitraryMinimumCellSize)
             .round()
             .clamp(1, 10);
 
-        final cellWidth =
-            (constraints.maxWidth - (crossAxisSpacing * (crossAxisCount - 1))) /
-            crossAxisCount;
+        final itemWidth = calculateItemWidth(
+          constraints.maxWidth,
+          crossAxisCount,
+        );
+
+        final itemHeight = calculateItemHeight(context, itemWidth);
 
         return GridView.builder(
+          controller: _scrollController,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: crossAxisSpacing,
-            mainAxisSpacing: 16.0,
-            mainAxisExtent: calculateMainAxisExtent(context, cellWidth),
+            crossAxisSpacing: widget.crossAxisSpacing,
+            mainAxisSpacing: widget.crossAxisSpacing,
+            mainAxisExtent: itemHeight,
           ),
-          itemCount: gallery.length,
+          itemCount: widget.gallery.length,
           itemBuilder: (context, index) {
-            final GalleryEntry entry = gallery[index];
-            final itemWidth = ((cellWidth) * pixelRatio).ceil();
-            final itemHeight = itemWidth;
+            final GalleryEntry entry = widget.gallery[index];
+            final imageWidth = ((itemWidth) * pixelRatio).ceil();
+            final imageHeight = imageWidth;
 
             return !entry.isVideo
                 ? ImageTile(
                     media: Image(
                       image: ResizeImage(
                         FileImage(entry.source),
-                        width: itemWidth,
-                        height: itemHeight,
+                        width: imageWidth,
+                        height: imageHeight,
                         policy: .fit,
                         allowUpscaling: true,
                       ),
                       fit: .cover,
                     ),
                     index: index,
-                    onTap: onSelect,
-                    onTapShift: onSelectTab,
+                    onTap: widget.onSelect,
+                    onTapShift: widget.onSelectTab,
                     tags: entry.tags,
                   )
                 : ImageTile.thumbnailUnavailable(
                     index: index,
-                    onTap: onSelect,
-                    onTapShift: onSelectTab,
+                    onTap: widget.onSelect,
+                    onTapShift: widget.onSelectTab,
                     tags: entry.tags,
                   );
           },
@@ -77,12 +97,17 @@ class MediaGrid extends StatelessWidget {
     );
   }
 
-  double calculateMainAxisExtent(BuildContext context, double cellWidth) {
+  double calculateItemHeight(BuildContext context, double cellWidth) {
     final textHeight = getTextHeight(style: DefaultTextStyle.of(context).style);
     final padding = 8.0;
     final imageHeight = cellWidth;
 
     return imageHeight + padding + textHeight;
+  }
+
+  double calculateItemWidth(double width, int crossAxisCount) {
+    return (width - (widget.crossAxisSpacing * (crossAxisCount - 1))) /
+        crossAxisCount;
   }
 
   double getTextHeight({
