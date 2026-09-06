@@ -37,6 +37,12 @@ class _MediaGridState extends State<MediaGrid> {
     super.dispose();
   }
 
+  // TODO: add a function to adjust the scroll position when the widget changes its crossAxisCount and when it 
+  // just changes its width (because changing the width changes the proportions as part of the height is fixed, namely the 
+  // text and padding between the text and image).
+
+
+
   @override
   Widget build(BuildContext context) {
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
