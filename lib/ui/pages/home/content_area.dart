@@ -66,7 +66,7 @@ class _ContentAreaState extends State<ContentArea> {
       ),
     );
 
-    final gridWithFilters = Container(
+    final grid = Container(
       decoration: BoxDecoration(
         borderRadius: .circular(8.0),
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -128,7 +128,7 @@ class _ContentAreaState extends State<ContentArea> {
           spacing: 8.0,
           children: [
             searchBar,
-            Expanded(child: gridWithFilters),
+            Expanded(child: grid),
           ],
         ),
         .splitView => Column(
@@ -139,7 +139,7 @@ class _ContentAreaState extends State<ContentArea> {
               child: Row(
                 spacing: 8.0,
                 children: [
-                  Expanded(child: gridWithFilters),
+                  Expanded(child: grid),
                   Expanded(child: viewerArea),
                 ],
               ),
