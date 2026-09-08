@@ -85,11 +85,15 @@ class _ContentAreaState extends State<ContentArea> {
               builder: (context, state) {
                 return switch (state) {
                   GalleryInitial() => const SizedBox(),
-                  GalleryLoadSuccess() => MediaGrid(
-                    key: PageStorageKey("Gallery grid scroll extent"),
-                    onSelect: open,
-                    onSelectTab: openInTab,
-                    gallery: state.content,
+                  GalleryLoadSuccess() => ClipRRect(
+                    borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
+                    clipBehavior: .antiAlias,
+                    child: MediaGrid(
+                      key: PageStorageKey("Gallery grid scroll extent"),
+                      onSelect: open,
+                      onSelectTab: openInTab,
+                      gallery: state.content,
+                    ),
                   ),
                   GalleryLoadingInProgress() => Center(
                     child: CircularProgressIndicator(),

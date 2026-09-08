@@ -6,8 +6,6 @@ import 'package:taggery/models/gallery.dart';
 // TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that §ould be displayed at most when the app is in fullscreen and does not have the viewer open).
 const int arbitraryMinimumCellSize = 300;
 
-// TODO: keep scrolling even if the widget changes dimensions.
-
 // TODO: load images while scrolling, instead of loading everything at once.
 class MediaGrid extends StatefulWidget {
   const MediaGrid({
