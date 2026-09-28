@@ -429,7 +429,7 @@ class ViewerTab extends StatelessWidget {
   }
 }
 
-// TODO: fix bug where video playback state is not saved when the viewer is closed. 
+// TODO: fix bug where video playback state is not saved when the viewer is closed.
 
 /// The widget containing the image and the media controls.
 class ImageViewer extends StatefulWidget {
@@ -507,7 +507,10 @@ class _ImageViewerState extends State<ImageViewer> {
           player: player,
           compact: isCurrentlyVideo,
         );
-        final videoTimeline = VideoTimeline(player: player);
+        final videoTimeline = Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: VideoTimeline(player: player),
+        );
 
         final controls = isCurrentlyVideo
             ? Column(
@@ -789,7 +792,10 @@ class VideoTimeline extends StatefulWidget {
 }
 
 class _VideoTimelineState extends State<VideoTimeline> {
-  bool wasPausedBeforeChange = false;
+  bool _isDragging = false;
+  bool _wasPausedBeforeChange = false;
+  bool _isHovering = false;
+  double _secondaryTrackValue = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -804,32 +810,108 @@ class _VideoTimelineState extends State<VideoTimeline> {
             ? 1.0
             : videoDuration.inMilliseconds / 1000.0;
 
-        /// TODO: add value indicator when selecting and when hovering.
-        return SizedBox(
-          height: 24,
-          width: null,
-          child: Slider(
-            value: value,
-            max: maxValue,
-            onChangeStart: (value) {
-              wasPausedBeforeChange = widget.player.state.playing;
-              widget.player.pause();
-            },
-            onChangeEnd: (value) {
-              if (wasPausedBeforeChange) {
-                widget.player.play();
-              }
-            },
-            onChanged: (value) {
-              final duration = Duration(milliseconds: (value * 1000).round());
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                widget.player.seek(duration);
-              });
-            },
-          ),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final double trackWidth = constraints.maxWidth;
+
+            final double indicatorValue = _isDragging ? value : _secondaryTrackValue;
+            
+            final double thumbFraction = (indicatorValue / maxValue).clamp(0.0, 1.0);
+            final double indicatorOffsetX = trackWidth * thumbFraction;
+
+            return MouseRegion(
+              onEnter: (_) => setState(() => _isHovering = true),
+              onExit: (_) => setState(() => _isHovering = false),
+              onHover: (event) {
+                final RenderBox box = context.findRenderObject()! as RenderBox;
+                final Offset localPosition = box.globalToLocal(event.position);
+
+                final double newValue =
+                    (localPosition.dx / box.size.width) * (maxValue);
+                setState(() {
+                  _secondaryTrackValue = newValue.clamp(0.0, maxValue);
+                });
+              },
+              child: Stack(
+                clipBehavior: .none,
+                children: [
+                  if (_isHovering || _isDragging) ...[
+                    Positioned(
+                      left: indicatorOffsetX,
+                      bottom: 32.0,
+                      child: FractionalTranslation(
+                        translation: const Offset(
+                          -0.5,
+                          0.0,
+                        ), // Center horizontally on cursor
+                        child: Card(
+                          elevation: 0.0,
+                          color: Theme.of(context).colorScheme.inverseSurface.withValues(alpha: 0.2),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 4.0,
+                            ),
+                            child: Text(
+                              formatTimestamp(indicatorValue),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onInverseSurface
+                              )
+                              ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  Slider(
+                    padding: .all(0),
+                    value: value,
+                    max: maxValue,
+                    secondaryTrackValue: _secondaryTrackValue,
+                    onChangeStart: (value) {
+                      _wasPausedBeforeChange = widget.player.state.playing;
+                      widget.player.pause();
+                      setState(() {
+                        _isDragging = true;
+                      });
+                    },
+                    onChangeEnd: (value) {
+                      if (_wasPausedBeforeChange) {
+                        widget.player.play();
+                      }
+                      setState(() {
+                        _secondaryTrackValue = value;
+                        _isDragging = false;
+                      });
+                    },
+                    onChanged: (value) {
+                      final duration = Duration(
+                        milliseconds: (value * 1000).round(),
+                      );
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        widget.player.seek(duration);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
+  }
+
+  String formatTimestamp(double seconds) {
+    final duration = Duration(milliseconds: (seconds * 1000).round());
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final secs = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+
+    if (hours > 0) {
+      return '$hours:$minutes:$secs';
+    }
+    return '$minutes:$secs';
   }
 }
 

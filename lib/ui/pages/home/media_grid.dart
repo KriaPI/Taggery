@@ -116,7 +116,7 @@ class _MediaGridState extends State<MediaGrid> {
     final scrollOffset = _scrollController.offset;
     final scrolledPastRows = (scrollOffset / (lastItemHeight + widget.mainAxisSpacing)).round();
     final firstVisibleItemIndex = scrolledPastRows * lastCrossAxisCount + 1;
-    print("Scrolled past rows: $scrolledPastRows, lastCrossAxisCount: $lastCrossAxisCount, scroll offset: $scrollOffset");
+    //print("Scrolled past rows: $scrolledPastRows, lastCrossAxisCount: $lastCrossAxisCount, scroll offset: $scrollOffset");
     
     final scrolledPastRowsInNewLayout = firstVisibleItemIndex ~/ crossAxisCount;
     final newScrollOffset = scrolledPastRowsInNewLayout * (itemHeight + widget.mainAxisSpacing); 
@@ -124,7 +124,7 @@ class _MediaGridState extends State<MediaGrid> {
   }
 
   bool constraintsHaveChanged(int crossAxisCount) {
-    print("cross axis count: $lastCrossAxisCount, $crossAxisCount");
+    //print("cross axis count: $lastCrossAxisCount, $crossAxisCount");
     return crossAxisCount != lastCrossAxisCount; 
   }
 
