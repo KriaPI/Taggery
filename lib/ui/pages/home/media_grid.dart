@@ -28,6 +28,8 @@ class MediaGrid extends StatefulWidget {
 
 class _MediaGridState extends State<MediaGrid> {
   final _scrollController = ScrollController();
+  int lastCrossAxisCount = 0;
+  double lastItemHeight = 0;
 
   @override
   void dispose() {
@@ -35,35 +37,44 @@ class _MediaGridState extends State<MediaGrid> {
     super.dispose();
   }
 
-  // TODO: add a function to adjust the scroll position when the widget changes its crossAxisCount and when it 
-  // just changes its width (because changing the width changes the proportions as part of the height is fixed, namely the 
-  // text and padding between the text and image).
-
-
-
   @override
   Widget build(BuildContext context) {
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = (constraints.maxWidth / arbitraryMinimumCellSize)
+        final maxWidth = constraints.maxWidth;
+        final crossAxisCount = (maxWidth / arbitraryMinimumCellSize)
             .round()
             .clamp(1, 10);
 
         final itemWidth = calculateItemWidth(
-          constraints.maxWidth,
+          maxWidth,
           crossAxisCount,
         );
 
         final itemHeight = calculateItemHeight(context, itemWidth);
+
+        // TODO: figure out a way of persisting the lastcrossaxiscount and lastitemheight. This widget's state
+        // is destroyed once split view is entered. Figure out how to avoid this state from being destroyed!
+        // if (constraintsHaveChanged(crossAxisCount) && _scrollController.hasClients) {
+        //   print("Triggered!");
+        //   final newScrollOffset = calculateNewScrollOffset(crossAxisCount, itemHeight);
+        //   WidgetsBinding.instance.addPostFrameCallback((_) {
+        //     _scrollController.jumpTo(newScrollOffset);
+        //   });
+        // }
+
+        // WidgetsBinding.instance.addPostFrameCallback((_) {
+        //   setLastConstraints(crossAxisCount, itemHeight);  
+        // });
 
         return GridView.builder(
           controller: _scrollController,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: widget.crossAxisSpacing,
-            mainAxisSpacing: widget.crossAxisSpacing,
+            mainAxisSpacing: widget.mainAxisSpacing,
             mainAxisExtent: itemHeight,
           ),
           itemCount: widget.gallery.length,
@@ -99,6 +110,27 @@ class _MediaGridState extends State<MediaGrid> {
         );
       },
     );
+  }
+
+  double calculateNewScrollOffset(int crossAxisCount, double itemHeight) {
+    final scrollOffset = _scrollController.offset;
+    final scrolledPastRows = (scrollOffset / (lastItemHeight + widget.mainAxisSpacing)).round();
+    final firstVisibleItemIndex = scrolledPastRows * lastCrossAxisCount + 1;
+    print("Scrolled past rows: $scrolledPastRows, lastCrossAxisCount: $lastCrossAxisCount, scroll offset: $scrollOffset");
+    
+    final scrolledPastRowsInNewLayout = firstVisibleItemIndex ~/ crossAxisCount;
+    final newScrollOffset = scrolledPastRowsInNewLayout * (itemHeight + widget.mainAxisSpacing); 
+    return newScrollOffset;
+  }
+
+  bool constraintsHaveChanged(int crossAxisCount) {
+    print("cross axis count: $lastCrossAxisCount, $crossAxisCount");
+    return crossAxisCount != lastCrossAxisCount; 
+  }
+
+  void setLastConstraints(int crossAxisCount, double itemHeight) {
+    lastCrossAxisCount = crossAxisCount;
+    lastItemHeight = itemHeight; 
   }
 
   double calculateItemHeight(BuildContext context, double cellWidth) {

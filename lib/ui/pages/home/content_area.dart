@@ -127,31 +127,25 @@ class _ContentAreaState extends State<ContentArea> {
           context.read<GalleryCubit>().loadDirectory(state.sourceRootPath);
         }
       },
-      child: switch (_viewMode) {
-        .gridExpanded => Column(
-          spacing: 8.0,
-          children: [
-            searchBar,
-            Expanded(child: grid),
-          ],
-        ),
-        .splitView => Column(
-          spacing: 8.0,
-          children: [
-            searchBar,
-            Expanded(
-              child: Row(
+      child: Column(
+        spacing: 8.0,
+        children: [
+          if (_viewMode != ContentAreaViewMode.viewerExpanded) searchBar,
+          Expanded(
+            child: switch (_viewMode) {
+              ContentAreaViewMode.gridExpanded => grid,
+              ContentAreaViewMode.splitView => Row(
                 spacing: 8.0,
                 children: [
                   Expanded(child: grid),
                   Expanded(child: viewerArea),
                 ],
               ),
-            ),
-          ],
-        ),
-        .viewerExpanded => viewerArea,
-      },
+              ContentAreaViewMode.viewerExpanded => viewerArea,
+            },
+          ),
+        ],
+      ),
     );
   }
 
