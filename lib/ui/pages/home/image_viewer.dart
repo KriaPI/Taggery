@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_ui/material_ui.dart';
@@ -6,6 +7,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:taggery/logic/tabs.dart';
 import 'package:taggery/ui/components/containers.dart';
+import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/components/toolbar.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 
@@ -774,7 +776,9 @@ class VideoControls extends StatelessWidget {
           );
         },
       ),
+      VideoDurationIndicator(player: player)
     ];
+
 
     return compact
         ? FloatingToolBar.compact(children: children)
@@ -782,7 +786,57 @@ class VideoControls extends StatelessWidget {
   }
 }
 
-///
+// TODO: make the stream for videoDurationIndicator only emit a value every second, except when the tab is changed (since it would
+// otherwise take one second for the new position / length indication to show up). This can likely be done with stream_transform audit
+// and a stream controller.
+
+class VideoDurationIndicator extends StatefulWidget {
+  const VideoDurationIndicator({super.key, required this.player});
+  final Player player;
+
+  @override
+  State<VideoDurationIndicator> createState() => _VideoDurationIndicatorState();
+}
+
+class _VideoDurationIndicatorState extends State<VideoDurationIndicator> {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: widget.player.stream.position,
+      initialData: widget.player.state.position,
+      builder: (context, snapshot) {
+        final value = snapshot.data!;
+        final videoDuration = widget.player.state.duration;
+        
+        final lengthTimeStamp = formatTimestamp(videoDuration);
+        final playBackTimeStamp = formatTimestamp(value);
+
+        return TimeStampText("$playBackTimeStamp / $lengthTimeStamp");
+      },
+    );
+  }
+
+  String formatTimestamp(Duration time) {
+    final hours = time.inHours;
+    final minutes = time.inMinutes % 60;
+    final seconds = time.inSeconds % 60;
+
+    final hoursText = getTimeStampPart(hours);
+    final minutesText = getTimeStampPart(minutes);
+    final secondsText = getTimeStampPart(seconds);
+
+    if (hours > 0) {
+      return "$hoursText:$secondsText:$minutesText";
+    }
+    return "$minutesText:$secondsText";
+  }
+
+  String getTimeStampPart(int value) {
+    return value < 10 ? "0$value" : "$value";
+  }
+}
+
+
 class VideoTimeline extends StatefulWidget {
   const VideoTimeline({super.key, required this.player});
   final Player player;
@@ -796,15 +850,19 @@ class _VideoTimelineState extends State<VideoTimeline> {
   bool _wasPausedBeforeChange = false;
   bool _isHovering = false;
   double _secondaryTrackValue = 0.0;
-
+  double _trackValue = 0.0;
+  
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
       stream: widget.player.stream.position,
+      initialData: widget.player.state.position,
       builder: (context, snapshot) {
-        final value = snapshot.data == null
-            ? 0.0
-            : snapshot.data!.inMilliseconds / 1000.0;
+        if (snapshot.data != null) {
+          _trackValue = snapshot.data!.inMilliseconds / 1000.0;
+        }
+
+        final value = _trackValue;
         final videoDuration = widget.player.state.duration;
         final maxValue = videoDuration == Duration.zero
             ? 1.0
@@ -867,7 +925,7 @@ class _VideoTimelineState extends State<VideoTimeline> {
                     padding: .all(0),
                     value: value,
                     max: maxValue,
-                    secondaryTrackValue: _secondaryTrackValue,
+                    secondaryTrackValue: _secondaryTrackValue.clamp(0, 1.0),
                     onChangeStart: (value) {
                       _wasPausedBeforeChange = widget.player.state.playing;
                       widget.player.pause();
@@ -888,9 +946,7 @@ class _VideoTimelineState extends State<VideoTimeline> {
                       final duration = Duration(
                         milliseconds: (value * 1000).round(),
                       );
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        widget.player.seek(duration);
-                      });
+                      widget.player.seek(duration);
                     },
                   ),
                 ],

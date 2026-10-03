@@ -30,8 +30,6 @@ class TitleTextLarge extends StatelessWidget {
   }
 }
 
-
-
 class BodyText extends StatelessWidget {
   const BodyText(this.text, {super.key});
   final String text;
@@ -39,5 +37,20 @@ class BodyText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(text, style: Theme.of(context).textTheme.bodyMedium);
+  }
+}
+
+class TimeStampText extends StatelessWidget {
+  const TimeStampText(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        fontFeatures: [FontFeature.tabularFigures()],
+      ),
+    );
   }
 }
