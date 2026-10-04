@@ -9,7 +9,6 @@ import 'package:taggery/models/settings.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/pages/home/media_grid.dart';
 import 'package:taggery/ui/pages/home/image_viewer.dart';
-import 'package:taggery/ui/pages/home/search_bar.dart';
 
 enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 
@@ -31,9 +30,6 @@ class ContentArea extends StatefulWidget {
 class _ContentAreaState extends State<ContentArea> {
   final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image viewer");
   ContentAreaViewMode _viewMode = .gridExpanded;
-  late final FocusNode _viewerFocusNode;
-  late final FocusNode _searchBarFocusNode;
-  late final SearchController _searchController;
 
   /// The index of the gallery entry that the primary tab is showing.
   int primaryTabIndex = 0;
@@ -52,7 +48,6 @@ class _ContentAreaState extends State<ContentArea> {
             GalleryLoadSuccess() => ImageViewerContainer(
               key: _viewerKey,
               primaryIndex: primaryTabIndex,
-              focusNode: _viewerFocusNode,
               isInFullview: _viewMode == .viewerExpanded,
               onPrevious: () => previous(),
               onNext: () => next(),
@@ -114,10 +109,7 @@ class _ContentAreaState extends State<ContentArea> {
       ),
     );
 
-    final searchBar = TaggerySearchBar(
-      focusNode: _searchBarFocusNode,
-      searchController: _searchController,
-    );
+    // TODO: move searchbar from here to a new widget containing the edit tag button and settings button/menu button (these two have not been implemented yet).
 
     return BlocListener<SettingsCubit, SettingsState>(
       listenWhen: (previous, current) =>
@@ -127,37 +119,23 @@ class _ContentAreaState extends State<ContentArea> {
           context.read<GalleryCubit>().loadDirectory(state.sourceRootPath);
         }
       },
-      child: Column(
-        spacing: 8.0,
-        children: [
-          if (_viewMode != ContentAreaViewMode.viewerExpanded) searchBar,
-          Expanded(
-            child: switch (_viewMode) {
-              ContentAreaViewMode.gridExpanded => grid,
-              ContentAreaViewMode.splitView => Row(
-                spacing: 8.0,
-                children: [
-                  Expanded(child: grid),
-                  Expanded(child: viewerArea),
-                ],
-              ),
-              ContentAreaViewMode.viewerExpanded => viewerArea,
-            },
-          ),
-        ],
-      ),
+      child: switch (_viewMode) {
+        ContentAreaViewMode.gridExpanded => grid,
+        ContentAreaViewMode.splitView => Row(
+          spacing: 8.0,
+          children: [
+            Expanded(child: grid),
+            Expanded(child: viewerArea),
+          ],
+        ),
+        ContentAreaViewMode.viewerExpanded => viewerArea,
+      },
     );
   }
 
   @override
   void initState() {
     super.initState();
-    _searchController = SearchController();
-    _viewerFocusNode = FocusNode(debugLabel: "Viewer focus node");
-    _searchBarFocusNode = FocusNode(debugLabel: "Search bar focus");
-
-    // Make sure that the viewer is in focus if the search bar is not in focus
-    _searchBarFocusNode.addListener(_handleViewerFocus);
 
     // Check if settings are already loaded when this widget mounts.
     final settingsState = context.read<SettingsCubit>().state;
@@ -166,30 +144,10 @@ class _ContentAreaState extends State<ContentArea> {
     }
   }
 
-  @override
-  void dispose() {
-    _viewerFocusNode.removeListener(_handleViewerFocus);
-    _viewerFocusNode.dispose();
-    _searchBarFocusNode.dispose();
-    _searchController.dispose();
-
-    super.dispose();
-  }
-
   void closeViewer() {
     setState(() {
       _viewMode = .gridExpanded;
     });
-  }
-
-  void _handleViewerFocus() {
-    if (_searchController.isOpen) {
-      return;
-    }
-
-    if (!_viewerFocusNode.hasFocus && !_searchBarFocusNode.hasFocus) {
-      _viewerFocusNode.requestFocus();
-    }
   }
 
   void expandOrMinimizeViewer() {
@@ -246,6 +204,26 @@ class _ContentAreaState extends State<ContentArea> {
     }
   }
 
+  /// Set the primary tab index to the first item.
+  void first() {
+    final gallery = context.read<GalleryCubit>().state;
+
+    // Precache the image after the image at newIndex.
+    if (gallery is GalleryLoadSuccess) {
+      final first = gallery.content[0];
+
+      if (!first.isVideo) {
+        precacheImage(FileImage(first.source), context);
+      }
+
+      context.read<TabCubit>().open(first);
+
+      setState(() {
+        primaryTabIndex = 0;
+      });
+    }
+  }
+
   void previous() {
     final gallery = context.read<GalleryCubit>().state;
 
@@ -286,26 +264,6 @@ class _ContentAreaState extends State<ContentArea> {
 
       setState(() {
         primaryTabIndex = newIndex;
-      });
-    }
-  }
-
-  /// Set the primary tab index to the first item.
-  void first() {
-    final gallery = context.read<GalleryCubit>().state;
-
-    // Precache the image after the image at newIndex.
-    if (gallery is GalleryLoadSuccess) {
-      final first = gallery.content[0];
-
-      if (!first.isVideo) {
-        precacheImage(FileImage(first.source), context);
-      }
-
-      context.read<TabCubit>().open(first);
-
-      setState(() {
-        primaryTabIndex = 0;
       });
     }
   }

@@ -30,7 +30,6 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 class ImageViewerContainer extends StatefulWidget {
   const ImageViewerContainer({
     super.key,
-    required this.focusNode,
     required this.isInFullview,
     required this.primaryIndex,
     required this.onPrevious,
@@ -39,7 +38,6 @@ class ImageViewerContainer extends StatefulWidget {
     required this.onToggleFullview,
   });
 
-  final FocusNode focusNode;
   final bool isInFullview;
 
   /// The index of the gallery entry shown in the first tab. This is used to compare in didWidgetUpdate().
@@ -74,77 +72,71 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
     // TODO: Move actions to imageViewer.
     return Actions(
       actions: viewerActions,
-      child: GestureDetector(
-        onTap: () {
-          widget.focusNode.requestFocus();
-        },
-        child: Focus(
-          autofocus: true,
-          focusNode: widget.focusNode,
-          child: Column(
-            spacing: 4.0,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                spacing: 16.0,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.close_rounded),
-                    onPressed: widget.onClose,
-                    tooltip: "Close",
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: 32,
-                      child: BlocConsumer<TabCubit, List<TabState>>(
-                        listener: (context, state) {
-                          // Update the length of the tab controller to match the cubit.
-                          // The length is +1 because there is always an additional tab open
-                          // that allows the user to navigate between gallery items (images/videos).
-                          _updateTabController(state.length);
+      child: Focus(
+        autofocus: true,
+        child: Column(
+          spacing: 4.0,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 16.0,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.close_rounded),
+                  onPressed: widget.onClose,
+                  tooltip: "Close",
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: 32,
+                    child: BlocConsumer<TabCubit, List<TabState>>(
+                      listener: (context, state) {
+                        // Update the length of the tab controller to match the cubit.
+                        // The length is +1 because there is always an additional tab open
+                        // that allows the user to navigate between gallery items (images/videos).
+                        _updateTabController(state.length);
+                      },
+                      builder: (context, tabs) => ViewerTabBar(
+                        tabController: _tabController,
+                        tabTitles: tabs
+                            .map((entry) => entry.content.name)
+                            .toList(),
+                        onCloseTab: (index) {
+                          context.read<TabCubit>().closeTab(index);
                         },
-                        builder: (context, tabs) => ViewerTabBar(
-                          tabController: _tabController,
-                          tabTitles: tabs
-                              .map((entry) => entry.content.name)
-                              .toList(),
-                          onCloseTab: (index) {
-                            context.read<TabCubit>().closeTab(index);
-                          },
-                        ),
                       ),
                     ),
                   ),
-                  widget.isInFullview
-                      ? IconButton(
-                          onPressed: widget.onToggleFullview,
-                          icon: Icon(Icons.close_fullscreen_rounded),
-                          tooltip: "Minimize",
-                        )
-                      : IconButton(
-                          onPressed: widget.onToggleFullview,
-                          icon: Icon(Icons.open_in_full_rounded),
-                          tooltip: "Maximize",
-                        ),
-                ],
-              ),
-              Expanded(
-                child: BlocBuilder<TabCubit, List<TabState>>(
-                  builder: (context, tabs) => ImageViewer(
-                    key: ValueKey(widget.primaryIndex),
-                    tabController: _tabController,
-                    onPrevious: widget.onPrevious,
-                    onNext: widget.onNext,
-                    onClose: widget.onClose,
-                    onTogglePinControls: togglePinControls,
-                    onToggleMonochrome: toggleMonochrome,
-                    areControlsPinned: _pinControls,
-                    showMonochrome: _isMonochrome,
-                  ),
+                ),
+                widget.isInFullview
+                    ? IconButton(
+                        onPressed: widget.onToggleFullview,
+                        icon: Icon(Icons.close_fullscreen_rounded),
+                        tooltip: "Minimize",
+                      )
+                    : IconButton(
+                        onPressed: widget.onToggleFullview,
+                        icon: Icon(Icons.open_in_full_rounded),
+                        tooltip: "Maximize",
+                      ),
+              ],
+            ),
+            Expanded(
+              child: BlocBuilder<TabCubit, List<TabState>>(
+                builder: (context, tabs) => ImageViewer(
+                  key: ValueKey(widget.primaryIndex),
+                  tabController: _tabController,
+                  onPrevious: widget.onPrevious,
+                  onNext: widget.onNext,
+                  onClose: widget.onClose,
+                  onTogglePinControls: togglePinControls,
+                  onToggleMonochrome: toggleMonochrome,
+                  areControlsPinned: _pinControls,
+                  showMonochrome: _isMonochrome,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

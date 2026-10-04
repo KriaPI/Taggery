@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taggery/ui/pages/home/content_area.dart';
+import 'package:taggery/ui/pages/home/header.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -9,14 +10,11 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.only(top: 16.0, right: 32.0),
-        child: Row(
-          children: [
-            const AppPageNavigator(currentIndex: 0),
-            Expanded(
-              child: const ContentArea(),
-            ),
-          ],
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Column(children: [
+          PageHeader(),
+          Expanded(child: const ContentArea())
+          ]
         ),
       ),
     );
@@ -25,10 +23,7 @@ class HomePage extends StatelessWidget {
 
 /// Navigation rail
 class AppPageNavigator extends StatelessWidget {
-  const AppPageNavigator({
-    super.key, 
-    required this.currentIndex,
-  });
+  const AppPageNavigator({super.key, required this.currentIndex});
 
   final int currentIndex;
 
@@ -40,7 +35,7 @@ class AppPageNavigator extends StatelessWidget {
         break;
       case 1:
         throw UnimplementedError();
-        //break;
+      //break;
       case 2:
         context.go('/settings');
         break;
@@ -76,4 +71,3 @@ class AppPageNavigator extends StatelessWidget {
     );
   }
 }
-

@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taggery/logic/gallery.dart';
@@ -8,10 +7,8 @@ import 'package:taggery/logic/search.dart';
 class TaggerySearchBar extends StatefulWidget {
   const TaggerySearchBar({
     super.key,
-    required this.focusNode,
     required this.searchController,
   });
-  final FocusNode focusNode;
   final SearchController searchController;
 
   @override
@@ -40,7 +37,6 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
       builder: (context, controller) {
         return SearchBar(
           autoFocus: false,
-          focusNode: widget.focusNode,
           controller: controller,
           hintText: "Search in gallery",
           elevation: WidgetStatePropertyAll(0.0),
