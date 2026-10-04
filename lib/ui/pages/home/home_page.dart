@@ -10,8 +10,10 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: Column(children: [
+        padding: const EdgeInsets.only(top: 16.0),
+        child: Column(
+          spacing: 16.0,
+          children: [
           PageHeader(),
           Expanded(child: const ContentArea())
           ]

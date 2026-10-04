@@ -5,10 +5,7 @@ import 'package:taggery/logic/gallery.dart';
 import 'package:taggery/logic/search.dart';
 
 class TaggerySearchBar extends StatefulWidget {
-  const TaggerySearchBar({
-    super.key,
-    required this.searchController,
-  });
+  const TaggerySearchBar({super.key, required this.searchController});
   final SearchController searchController;
 
   @override
@@ -35,7 +32,14 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
       searchController: widget.searchController,
       shrinkWrap: true,
       builder: (context, controller) {
+        final colorScheme = Theme.of(context).colorScheme;
+
+        final textStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        );
+
         return SearchBar(
+          textStyle: .all(textStyle),
           autoFocus: false,
           controller: controller,
           hintText: "Search in gallery",

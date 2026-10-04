@@ -66,7 +66,7 @@ class _ContentAreaState extends State<ContentArea> {
         borderRadius: .circular(8.0),
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
       ),
-      padding: EdgeInsets.fromLTRB(24.0, 8.0, 24.0, 0.0),
+      padding: EdgeInsets.fromLTRB(16, 8.0, 16.0, 0.0),
       child: Column(
         spacing: 48.0,
         children: [

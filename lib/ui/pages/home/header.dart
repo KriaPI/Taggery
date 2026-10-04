@@ -15,23 +15,32 @@ class _PageHeaderState extends State<PageHeader> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      spacing: 8.0,
-      children: [
-        Expanded(child: TaggerySearchBar(searchController: searchController)),
-        TonalToggleButton(
-          isSelected: false,
-          label: "Edit tags",
-          selectedIcon: Icon(Symbols.edit, fill: 1.0),
-          icon: Icon(Symbols.edit),
-          onPressed: () {},
-        ),
-
-        SquareTonalIconButton(
-          icon: Icon(Icons.settings_outlined),
-          onPressed: () {},
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        spacing: 24.0,
+        children: [
+          Expanded(
+            child: Row(
+              spacing: 8.0,
+              children: [
+                Expanded(child: TaggerySearchBar(searchController: searchController)),
+                SquareTonalTextButton(
+                  isSelected: false,
+                  label: "Edit tags",
+                  selectedIcon: Icon(Symbols.edit, fill: 1.0),
+                  icon: Icon(Symbols.edit),
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
+          SquareTonalIconButton(
+            icon: Icon(Icons.settings_outlined),
+            onPressed: () {},
+          ),
+        ],
+      ),
     );
   }
 }
