@@ -1,8 +1,50 @@
 import 'package:material_ui/material_ui.dart';
 
+/// An Icon widget with default weight and optical size.
+class IconWithDefaults extends StatelessWidget {
+  const IconWithDefaults(this.icon, {super.key, this.filled = false});
+  final IconData? icon;
+  final bool filled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(icon, weight: 400, opticalSize: 24, fill: filled ? 1.0 : 0.0);
+  }
+}
+
+
+class SquareOutlinedIconButton extends StatelessWidget {
+  const SquareOutlinedIconButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+    this.tooltip,
+  });
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return IconButton.outlined(
+      tooltip: tooltip,
+      style: IconButton.styleFrom(
+        foregroundColor: (colorScheme.onSurfaceVariant),
+        backgroundColor: Colors.transparent,
+        side: BorderSide(color: colorScheme.outlineVariant, width: 1.0),
+        shape: RoundedRectangleBorder(borderRadius: .all(.circular(16.0))),
+      ),
+      onPressed: onPressed,
+      icon: IconWithDefaults(icon),
+    );
+  }
+}
+
 /// A square tonal icon button following the Material design 3 expressive design system.
 ///
-/// The default size is M.
+/// The size is M.
 class SquareTonalIconButton extends StatelessWidget {
   const SquareTonalIconButton({
     super.key,
@@ -11,7 +53,7 @@ class SquareTonalIconButton extends StatelessWidget {
     this.tooltip,
   });
   final VoidCallback onPressed;
-  final Widget icon;
+  final IconData icon;
   final String? tooltip;
 
   @override
@@ -27,7 +69,7 @@ class SquareTonalIconButton extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: .all(.circular(16.0))),
       ),
       onPressed: onPressed,
-      icon: icon,
+      icon: IconWithDefaults(icon),
     );
   }
 }
@@ -47,9 +89,9 @@ class SquareTonalTextButton extends StatelessWidget {
 
   final bool isSelected;
   final VoidCallback onPressed;
-  final Widget icon;
+  final IconData icon;
   final String label;
-  final Widget selectedIcon;
+  final IconData selectedIcon;
   final String? tooltip;
   final String? selectedTooltip;
 
@@ -61,7 +103,7 @@ class SquareTonalTextButton extends StatelessWidget {
     return SizedBox(
       height: 56,
       child: TextButton.icon(
-        icon: isSelected ? selectedIcon : icon,
+        icon: IconWithDefaults(isSelected ? selectedIcon : icon),
         label: Text(label),
         style: TextButton.styleFrom(
           iconSize: 24,

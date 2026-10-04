@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taggery/logic/settings.dart';
@@ -6,6 +7,7 @@ import 'package:taggery/models/gallery.dart';
 import 'package:taggery/logic/gallery.dart';
 import 'package:taggery/logic/tabs.dart';
 import 'package:taggery/models/settings.dart';
+import 'package:taggery/ui/components/buttons.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/pages/home/media_grid.dart';
 import 'package:taggery/ui/pages/home/image_viewer.dart';
@@ -36,100 +38,99 @@ class _ContentAreaState extends State<ContentArea> {
 
   @override
   Widget build(BuildContext context) {
-    final viewerArea = Container(
-      decoration: BoxDecoration(
-        borderRadius: .circular(8.0),
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-      ),
-      padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-      child: BlocBuilder<GalleryCubit, GalleryState>(
-        builder: (context, state) {
-          return switch (state) {
-            GalleryLoadSuccess() => ImageViewerContainer(
-              key: _viewerKey,
-              primaryIndex: primaryTabIndex,
-              isInFullview: _viewMode == .viewerExpanded,
-              onPrevious: () => previous(),
-              onNext: () => next(),
-              onClose: closeViewer,
-              onToggleFullview: expandOrMinimizeViewer,
-            ),
-            // Return the equivalent of nothing if the gallery has not loaded yet.
-            _ => const SizedBox(),
-          };
-        },
-      ),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final viewer = BlocBuilder<GalleryCubit, GalleryState>(
+      builder: (context, state) {
+        return switch (state) {
+          GalleryLoadSuccess() => ImageViewerContainer(
+            key: _viewerKey,
+            primaryIndex: primaryTabIndex,
+            onPrevious: () => previous(),
+            onNext: () => next(),
+          ),
+          // Return the equivalent of nothing if the gallery has not loaded yet.
+          _ => const SizedBox(),
+        };
+      },
     );
 
-    final grid = Container(
+    final splitViewViewer = Container(
       decoration: BoxDecoration(
         borderRadius: .circular(8.0),
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        color: colorScheme.surfaceContainerLow,
       ),
-      padding: EdgeInsets.fromLTRB(16, 8.0, 16.0, 0.0),
-      child: Column(
-        spacing: 48.0,
-        children: [
-          // TODO: re-introduce filters (you should make the filters look better and actually do stuff, connect it to a cubit).
-          //const ContentFilters(),
-          Expanded(
-            child: BlocConsumer<GalleryCubit, GalleryState>(
-              listener: (context, state) {
-                first();
-              },
-              builder: (context, state) {
-                return switch (state) {
-                  GalleryInitial() => const SizedBox(),
-                  GalleryLoadSuccess() => ClipRRect(
-                    borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
-                    clipBehavior: .antiAlias,
-                    child: MediaGrid(
-                      key: PageStorageKey("Gallery grid scroll extent"),
-                      onSelect: open,
-                      onSelectTab: openInTab,
-                      gallery: state.content,
-                    ),
-                  ),
-                  GalleryLoadingInProgress() => Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  GalleryLoadFailure() => Column(
-                    crossAxisAlignment: .center,
-                    children: [
-                      TitleTextMedium("Could not load images."),
-                      BodyText("Error"),
-                      BodyText("Could not load images."),
-                    ],
-                  ),
-                };
-              },
+      padding: .fromLTRB(8, 8, 8, 0),
+      child: viewer,
+    );
+
+    final grid = BlocConsumer<GalleryCubit, GalleryState>(
+      listener: (context, state) {
+        first();
+      },
+      builder: (context, state) {
+        return switch (state) {
+          GalleryInitial() => const SizedBox(),
+          GalleryLoadSuccess() => ClipRRect(
+            borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
+            clipBehavior: .antiAlias,
+            child: MediaGrid(
+              key: PageStorageKey("Gallery grid scroll extent"),
+              onSelect: open,
+              onSelectTab: openInTab,
+              gallery: state.content,
             ),
           ),
-        ],
-      ),
+          GalleryLoadingInProgress() => Center(
+            child: CircularProgressIndicator(),
+          ),
+          GalleryLoadFailure() => Column(
+            crossAxisAlignment: .center,
+            children: [
+              TitleTextMedium("Could not load images."),
+              BodyText("Error"),
+              BodyText("Could not load images."),
+            ],
+          ),
+        };
+      },
     );
 
-    // TODO: move searchbar from here to a new widget containing the edit tag button and settings button/menu button (these two have not been implemented yet).
+    final areaStateSelector = StateSelector(
+      state: _viewMode,
+      changeState: (ContentAreaViewMode newState) => setState(() {
+        _viewMode = newState;
+      }),
+    );
 
-    return BlocListener<SettingsCubit, SettingsState>(
-      listenWhen: (previous, current) =>
-          current is SettingsLoadSuccess && previous != current,
-      listener: (context, state) {
-        if (state is SettingsLoadSuccess) {
-          context.read<GalleryCubit>().loadDirectory(state.sourceRootPath);
-        }
-      },
-      child: switch (_viewMode) {
-        ContentAreaViewMode.gridExpanded => grid,
-        ContentAreaViewMode.splitView => Row(
-          spacing: 8.0,
-          children: [
-            Expanded(child: grid),
-            Expanded(child: viewerArea),
-          ],
-        ),
-        ContentAreaViewMode.viewerExpanded => viewerArea,
-      },
+    final filtersAndViewControls = Row(
+      mainAxisAlignment: .spaceBetween,
+      children: [
+        SquareOutlinedIconButton(onPressed: () {}, icon: Icons.tune_rounded),
+        areaStateSelector
+      ],
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: .circular(8.0),
+        color: colorScheme.surfaceContainerLowest,
+      ),
+      padding: .fromLTRB(8, 8, 8, 0),
+      child: Column(
+        spacing: 8,
+        children: [
+          filtersAndViewControls,
+          Expanded(child: Row(
+            spacing: 16.0,
+            children: [
+              if (_viewMode == .gridExpanded || _viewMode == .splitView) ...[Expanded(child: grid)],
+              if (_viewMode == .splitView) ...[Expanded(child: splitViewViewer)],
+              if (_viewMode == .viewerExpanded) ...[Expanded(child: viewer)],
+            ],
+          )),
+        ],
+      ),
     );
   }
 
@@ -141,27 +142,6 @@ class _ContentAreaState extends State<ContentArea> {
     final settingsState = context.read<SettingsCubit>().state;
     if (settingsState is SettingsLoadSuccess) {
       context.read<GalleryCubit>().loadDirectory(settingsState.sourceRootPath);
-    }
-  }
-
-  void closeViewer() {
-    setState(() {
-      _viewMode = .gridExpanded;
-    });
-  }
-
-  void expandOrMinimizeViewer() {
-    if (_viewMode == .splitView) {
-      setState(() {
-        _viewMode = .viewerExpanded;
-      });
-    } else if (_viewMode == .viewerExpanded) {
-      setState(() {
-        _viewMode = .splitView;
-      });
-    } else {
-      // This should never happen!
-      assert(false);
     }
   }
 
@@ -276,5 +256,49 @@ class _ContentAreaState extends State<ContentArea> {
   /// Assumes the boundaries are [0, length].
   int getNextIndex(int current, int length) {
     return current != length - 1 ? current + 1 : 0;
+  }
+}
+
+// A radio button but with icons instead.
+class StateSelector extends StatelessWidget {
+  const StateSelector({
+    super.key,
+    required this.state,
+    required this.changeState,
+  });
+  final ContentAreaViewMode state;
+  final void Function(ContentAreaViewMode newState) changeState;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const .symmetric(horizontal: 4.0),
+      child: Row(
+        spacing: 8.0,
+        children: [
+          GestureDetector(
+            onTap: () => changeState(.gridExpanded),
+            child: IconWithDefaults(
+              Symbols.grid_view,
+              filled: state == .gridExpanded,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => changeState(.splitView),
+            child: IconWithDefaults(
+              Symbols.vertical_split,
+              filled: state == .splitView,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => changeState(.viewerExpanded),
+            child: IconWithDefaults(
+              Symbols.image,
+              filled: state == .viewerExpanded,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

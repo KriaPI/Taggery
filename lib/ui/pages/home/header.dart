@@ -16,7 +16,7 @@ class _PageHeaderState extends State<PageHeader> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Row(
         spacing: 24.0,
         children: [
@@ -28,15 +28,15 @@ class _PageHeaderState extends State<PageHeader> {
                 SquareTonalTextButton(
                   isSelected: false,
                   label: "Edit tags",
-                  selectedIcon: Icon(Symbols.edit, fill: 1.0),
-                  icon: Icon(Symbols.edit),
+                  selectedIcon: Symbols.edit,
+                  icon: Symbols.edit,
                   onPressed: () {},
                 ),
               ],
             ),
           ),
           SquareTonalIconButton(
-            icon: Icon(Icons.settings_outlined),
+            icon: Icons.settings_outlined,
             onPressed: () {},
           ),
         ],

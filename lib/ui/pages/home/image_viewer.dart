@@ -30,24 +30,15 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 class ImageViewerContainer extends StatefulWidget {
   const ImageViewerContainer({
     super.key,
-    required this.isInFullview,
     required this.primaryIndex,
     required this.onPrevious,
     required this.onNext,
-    required this.onClose,
-    required this.onToggleFullview,
   });
-
-  final bool isInFullview;
 
   /// The index of the gallery entry shown in the first tab. This is used to compare in didWidgetUpdate().
   final int primaryIndex;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
-  final VoidCallback onClose;
-
-  /// The callback that should be called to turn on full view of the viewer and turn of split view between the viewer and gallery grid, and vice versa.
-  final VoidCallback onToggleFullview;
 
   @override
   State<StatefulWidget> createState() => ImageViewerContainerState();
@@ -77,49 +68,23 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
         child: Column(
           spacing: 4.0,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              spacing: 16.0,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.close_rounded),
-                  onPressed: widget.onClose,
-                  tooltip: "Close",
+            SizedBox(
+              height: 32,
+              child: BlocConsumer<TabCubit, List<TabState>>(
+                listener: (context, state) {
+                  // Update the length of the tab controller to match the cubit.
+                  // The length is +1 because there is always an additional tab open
+                  // that allows the user to navigate between gallery items (images/videos).
+                  _updateTabController(state.length);
+                },
+                builder: (context, tabs) => ViewerTabBar(
+                  tabController: _tabController,
+                  tabTitles: tabs.map((entry) => entry.content.name).toList(),
+                  onCloseTab: (index) {
+                    context.read<TabCubit>().closeTab(index);
+                  },
                 ),
-                Expanded(
-                  child: SizedBox(
-                    height: 32,
-                    child: BlocConsumer<TabCubit, List<TabState>>(
-                      listener: (context, state) {
-                        // Update the length of the tab controller to match the cubit.
-                        // The length is +1 because there is always an additional tab open
-                        // that allows the user to navigate between gallery items (images/videos).
-                        _updateTabController(state.length);
-                      },
-                      builder: (context, tabs) => ViewerTabBar(
-                        tabController: _tabController,
-                        tabTitles: tabs
-                            .map((entry) => entry.content.name)
-                            .toList(),
-                        onCloseTab: (index) {
-                          context.read<TabCubit>().closeTab(index);
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-                widget.isInFullview
-                    ? IconButton(
-                        onPressed: widget.onToggleFullview,
-                        icon: Icon(Icons.close_fullscreen_rounded),
-                        tooltip: "Minimize",
-                      )
-                    : IconButton(
-                        onPressed: widget.onToggleFullview,
-                        icon: Icon(Icons.open_in_full_rounded),
-                        tooltip: "Maximize",
-                      ),
-              ],
+              ),
             ),
             Expanded(
               child: BlocBuilder<TabCubit, List<TabState>>(
@@ -128,7 +93,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
                   tabController: _tabController,
                   onPrevious: widget.onPrevious,
                   onNext: widget.onNext,
-                  onClose: widget.onClose,
                   onTogglePinControls: togglePinControls,
                   onToggleMonochrome: toggleMonochrome,
                   areControlsPinned: _pinControls,
@@ -160,9 +124,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
           onInvoke: (intent) => widget.onNext(),
         ),
       },
-      CloseIntent: CallbackAction<CloseIntent>(
-        onInvoke: (intent) => widget.onClose(),
-      ),
     };
 
     _tabController.addListener(_updateShortCuts);
@@ -200,9 +161,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
           onInvoke: (intent) => widget.onNext(),
         ),
       },
-      CloseIntent: CallbackAction<CloseIntent>(
-        onInvoke: (intent) => widget.onClose(),
-      ),
     };
 
     setState(() {
@@ -399,6 +357,7 @@ class ViewerTab extends StatelessWidget {
               ? colorScheme.surfaceContainer.withValues(alpha: 0.7)
               : Colors.transparent);
 
+    // TODO: change color depending on the elevation level (number of widgets this sits on top of).
     return Tooltip(
       message: name,
       child: Material(
@@ -432,7 +391,6 @@ class ImageViewer extends StatefulWidget {
     required this.tabController,
     required this.onPrevious,
     required this.onNext,
-    required this.onClose,
     required this.onTogglePinControls,
     required this.onToggleMonochrome,
     required this.areControlsPinned,
@@ -441,7 +399,6 @@ class ImageViewer extends StatefulWidget {
   final TabController tabController;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
-  final VoidCallback onClose;
   final VoidCallback onTogglePinControls;
   final VoidCallback onToggleMonochrome;
   final bool areControlsPinned;
@@ -768,9 +725,8 @@ class VideoControls extends StatelessWidget {
           );
         },
       ),
-      VideoDurationIndicator(player: player)
+      VideoDurationIndicator(player: player),
     ];
-
 
     return compact
         ? FloatingToolBar.compact(children: children)
@@ -799,7 +755,7 @@ class _VideoDurationIndicatorState extends State<VideoDurationIndicator> {
       builder: (context, snapshot) {
         final value = snapshot.data!;
         final videoDuration = widget.player.state.duration;
-        
+
         final lengthTimeStamp = formatTimestamp(videoDuration);
         final playBackTimeStamp = formatTimestamp(value);
 
@@ -828,7 +784,6 @@ class _VideoDurationIndicatorState extends State<VideoDurationIndicator> {
   }
 }
 
-
 class VideoTimeline extends StatefulWidget {
   const VideoTimeline({super.key, required this.player});
   final Player player;
@@ -843,7 +798,7 @@ class _VideoTimelineState extends State<VideoTimeline> {
   bool _isHovering = false;
   double _secondaryTrackValue = 0.0;
   double _trackValue = 0.0;
-  
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
@@ -864,9 +819,14 @@ class _VideoTimelineState extends State<VideoTimeline> {
           builder: (context, constraints) {
             final double trackWidth = constraints.maxWidth;
 
-            final double indicatorValue = _isDragging ? value : _secondaryTrackValue;
-            
-            final double thumbFraction = (indicatorValue / maxValue).clamp(0.0, 1.0);
+            final double indicatorValue = _isDragging
+                ? value
+                : _secondaryTrackValue;
+
+            final double thumbFraction = (indicatorValue / maxValue).clamp(
+              0.0,
+              1.0,
+            );
             final double indicatorOffsetX = trackWidth * thumbFraction;
 
             return MouseRegion(
@@ -896,7 +856,9 @@ class _VideoTimelineState extends State<VideoTimeline> {
                         ), // Center horizontally on cursor
                         child: Card(
                           elevation: 0.0,
-                          color: Theme.of(context).colorScheme.inverseSurface.withValues(alpha: 0.2),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.inverseSurface.withValues(alpha: 0.2),
                           child: Padding(
                             padding: EdgeInsets.symmetric(
                               horizontal: 8.0,
@@ -905,9 +867,11 @@ class _VideoTimelineState extends State<VideoTimeline> {
                             child: Text(
                               formatTimestamp(indicatorValue),
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.onInverseSurface
-                              )
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onInverseSurface,
                               ),
+                            ),
                           ),
                         ),
                       ),
