@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:taggery/data/io_helpers.dart';
+import 'package:taggery/state/repository/io_helpers.dart';
 
 /// Repository for search options.
 /// 

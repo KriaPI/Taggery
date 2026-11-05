@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:taggery/logic/settings.dart';
-import 'package:taggery/models/gallery.dart';
-import 'package:taggery/logic/gallery.dart';
-import 'package:taggery/logic/tabs.dart';
-import 'package:taggery/models/settings.dart';
+import 'package:taggery/state/settings.dart';
+import 'package:taggery/state/models/gallery.dart';
+import 'package:taggery/state/gallery.dart';
+import 'package:taggery/state/tabs.dart';
+import 'package:taggery/state/models/settings.dart';
 import 'package:taggery/ui/components/buttons.dart';
 import 'package:taggery/ui/components/text_variants.dart';
-import 'package:taggery/ui/pages/home/media_grid.dart';
-import 'package:taggery/ui/pages/home/image_viewer.dart';
+import 'package:taggery/ui/pages/main/media_grid.dart';
+import 'package:taggery/ui/pages/main/image_viewer.dart';
 
 enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 

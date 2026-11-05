@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:taggery/models/gallery.dart';
+import 'package:taggery/state/models/gallery.dart';
 
 /// Stores the state of a tab and its content.
 class TabState {

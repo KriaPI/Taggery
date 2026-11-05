@@ -5,7 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
-import 'package:taggery/logic/tabs.dart';
+import 'package:taggery/state/tabs.dart';
 import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/components/toolbar.dart';

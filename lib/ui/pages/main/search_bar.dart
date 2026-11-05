@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:taggery/logic/gallery.dart';
-import 'package:taggery/logic/search.dart';
+import 'package:taggery/state/gallery.dart';
+import 'package:taggery/state/search.dart';
 
 class TaggerySearchBar extends StatefulWidget {
   const TaggerySearchBar({super.key, required this.searchController});

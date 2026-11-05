@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:taggery/data/gallery_repository.dart';
-import 'package:taggery/models/gallery.dart';
+import 'package:taggery/state/repository/gallery_repository.dart';
+import 'package:taggery/state/models/gallery.dart';
 
 class GalleryCubit extends Cubit<GalleryState> {
   GalleryCubit(this._repository) : super(GalleryInitial());

@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:taggery/data/settings_repository.dart';
-import 'package:taggery/models/settings.dart';
+import 'package:taggery/state/repository/settings_repository.dart';
+import 'package:taggery/state/models/settings.dart';
 
 /// Manages the state of the user's settings
 /// 

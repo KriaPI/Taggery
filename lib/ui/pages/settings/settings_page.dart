@@ -1,10 +1,10 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:taggery/logic/settings.dart';
+import 'package:taggery/state/settings.dart';
 import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/text_variants.dart';
-import 'package:taggery/ui/pages/home/home_page.dart';
+import 'package:taggery/ui/pages/main/main_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});

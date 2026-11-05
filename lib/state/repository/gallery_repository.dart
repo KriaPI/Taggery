@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 import 'package:path/path.dart';
-import 'package:taggery/data/io_helpers.dart';
-import 'package:taggery/models/gallery.dart';
+import 'package:taggery/state/repository/io_helpers.dart';
+import 'package:taggery/state/models/gallery.dart';
 
 // TODO: make this load in a stream instead.
 class GalleryRepository {

@@ -2,7 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:taggery/logic/settings.dart';
+import 'package:taggery/state/settings.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 
 class SetupPage extends StatelessWidget {

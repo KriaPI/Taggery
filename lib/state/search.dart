@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart';
-import 'package:taggery/data/search_repository.dart';
-import 'package:taggery/data/settings_repository.dart';
+import 'package:taggery/state/repository/search_repository.dart';
+import 'package:taggery/state/repository/settings_repository.dart';
 
 /// Provides the search suggestions for the search bar's view.
 class SearchSuggestionCubit extends Cubit<SearchState> {

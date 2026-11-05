@@ -1,7 +1,7 @@
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:taggery/ui/components/buttons.dart';
-import 'package:taggery/ui/pages/home/search_bar.dart';
+import 'package:taggery/ui/pages/main/search_bar.dart';
 
 class PageHeader extends StatefulWidget {
   const PageHeader({super.key});

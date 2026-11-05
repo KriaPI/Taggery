@@ -2,17 +2,17 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:taggery/data/gallery_repository.dart';
-import 'package:taggery/data/search_repository.dart';
-import 'package:taggery/data/settings_repository.dart';
-import 'package:taggery/logic/gallery.dart';
-import 'package:taggery/logic/search.dart';
-import 'package:taggery/logic/settings.dart';
-import 'package:taggery/logic/tabs.dart';
-import 'package:taggery/models/settings.dart';
+import 'package:taggery/state/repository/gallery_repository.dart';
+import 'package:taggery/state/repository/search_repository.dart';
+import 'package:taggery/state/repository/settings_repository.dart';
+import 'package:taggery/state/gallery.dart';
+import 'package:taggery/state/search.dart';
+import 'package:taggery/state/settings.dart';
+import 'package:taggery/state/tabs.dart';
+import 'package:taggery/state/models/settings.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
 import 'package:taggery/ui/configuration/theme.dart';
-import 'package:taggery/ui/pages/home/home_page.dart';
+import 'package:taggery/ui/pages/main/main_page.dart';
 import 'package:taggery/ui/pages/settings/settings_page.dart';
 import 'package:taggery/ui/pages/setup_page.dart';
 import 'package:window_manager/window_manager.dart';
@@ -41,10 +41,10 @@ void main() async {
           final fromSetup = state.extra as bool? ?? false;
 
           if (fromSetup) {
-            return MaterialPage(key: state.pageKey, child: const HomePage());
+            return MaterialPage(key: state.pageKey, child: const MainPage());
           }
 
-          return NoTransitionPage(key: state.pageKey, child: const HomePage());
+          return NoTransitionPage(key: state.pageKey, child: const MainPage());
         },
         redirect: (context, state) {
           final settingsState = context.read<SettingsCubit>().state;

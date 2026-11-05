@@ -1,10 +1,10 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
-import 'package:taggery/ui/pages/home/content_area.dart';
-import 'package:taggery/ui/pages/home/header.dart';
+import 'package:taggery/ui/pages/main/content_area.dart';
+import 'package:taggery/ui/pages/main/header.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class MainPage extends StatelessWidget {
+  const MainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
