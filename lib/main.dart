@@ -15,16 +15,23 @@ import 'package:taggery/ui/configuration/theme.dart';
 import 'package:taggery/ui/pages/home/home_page.dart';
 import 'package:taggery/ui/pages/settings/settings_page.dart';
 import 'package:taggery/ui/pages/setup_page.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  MediaKit.ensureInitialized();
+
+  final window = WindowManager.instance.getCurrent()!;
+
+  window.title = "Taggery";
+  window.minimumSize = const Size(900, 500).toNative();
+  window.center();
+  window.maximize();
+
   final settingsRepository = SettingsRepository();
   final galleryRepository = GalleryRepository();
   final searchRepository = SearchRepository();
   final settingsCubit = SettingsCubit(settingsRepository);
-  WidgetsFlutterBinding.ensureInitialized();
-  MediaKit.ensureInitialized(
-    
-  );
 
   final routes = GoRouter(
     routes: [
@@ -37,10 +44,7 @@ void main() {
             return MaterialPage(key: state.pageKey, child: const HomePage());
           }
 
-          return NoTransitionPage(
-            key: state.pageKey,
-            child: const HomePage(),
-          );
+          return NoTransitionPage(key: state.pageKey, child: const HomePage());
         },
         redirect: (context, state) {
           final settingsState = context.read<SettingsCubit>().state;
