@@ -53,7 +53,7 @@ class _MediaGridState extends State<MediaGrid> {
           crossAxisCount,
         );
 
-        final itemHeight = calculateExtendedItemHeight(context, itemWidth);
+        final itemHeight = calculateItemHeight(context, itemWidth);
 
         // TODO: figure out a way of persisting the lastcrossaxiscount and lastitemheight. This widget's state
         // is destroyed once split view is entered. Figure out how to avoid this state from being destroyed!
