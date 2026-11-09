@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/services.dart';
 import 'package:taggery/state/models/gallery.dart';
+import 'package:taggery/ui/components/image_tile.dart';
 
 // TODO: add a button after the tags to edit the tags when the user hovers over an item.
 // TODO: add an option to preferences to select from a range of sizes instead (or a number of cells that §ould be displayed at most when the app is in fullscreen and does not have the viewer open).
@@ -13,8 +13,8 @@ class MediaGrid extends StatefulWidget {
     required this.onSelect,
     required this.onSelectTab,
     required this.gallery,
-    this.mainAxisSpacing = 16.0,
-    this.crossAxisSpacing = 8.0,
+    this.mainAxisSpacing = 2,
+    this.crossAxisSpacing = 2,
   });
   final void Function(int index) onSelect;
   final void Function(int index) onSelectTab;
@@ -53,12 +53,11 @@ class _MediaGridState extends State<MediaGrid> {
           crossAxisCount,
         );
 
-        final itemHeight = calculateItemHeight(context, itemWidth);
+        final itemHeight = calculateExtendedItemHeight(context, itemWidth);
 
         // TODO: figure out a way of persisting the lastcrossaxiscount and lastitemheight. This widget's state
         // is destroyed once split view is entered. Figure out how to avoid this state from being destroyed!
         // if (constraintsHaveChanged(crossAxisCount) && _scrollController.hasClients) {
-        //   print("Triggered!");
         //   final newScrollOffset = calculateNewScrollOffset(crossAxisCount, itemHeight);
         //   WidgetsBinding.instance.addPostFrameCallback((_) {
         //     _scrollController.jumpTo(newScrollOffset);
@@ -85,26 +84,17 @@ class _MediaGridState extends State<MediaGrid> {
 
             return !entry.isVideo
                 ? ImageTile(
-                    media: Image(
-                      image: ResizeImage(
-                        FileImage(entry.source),
-                        width: imageWidth,
-                        height: imageHeight,
-                        policy: .fit,
-                        allowUpscaling: true,
-                      ),
-                      fit: .cover,
-                    ),
+                    source: entry.source,
+                    decodeHeight: imageHeight,
+                    decodeWidth: imageWidth,
                     index: index,
                     onTap: widget.onSelect,
                     onTapShift: widget.onSelectTab,
-                    tags: entry.tags,
                   )
                 : ImageTile.thumbnailUnavailable(
                     index: index,
                     onTap: widget.onSelect,
                     onTapShift: widget.onSelectTab,
-                    tags: entry.tags,
                   );
           },
         );
@@ -116,7 +106,6 @@ class _MediaGridState extends State<MediaGrid> {
     final scrollOffset = _scrollController.offset;
     final scrolledPastRows = (scrollOffset / (lastItemHeight + widget.mainAxisSpacing)).round();
     final firstVisibleItemIndex = scrolledPastRows * lastCrossAxisCount + 1;
-    //print("Scrolled past rows: $scrolledPastRows, lastCrossAxisCount: $lastCrossAxisCount, scroll offset: $scrollOffset");
     
     final scrolledPastRowsInNewLayout = firstVisibleItemIndex ~/ crossAxisCount;
     final newScrollOffset = scrolledPastRowsInNewLayout * (itemHeight + widget.mainAxisSpacing); 
@@ -124,7 +113,6 @@ class _MediaGridState extends State<MediaGrid> {
   }
 
   bool constraintsHaveChanged(int crossAxisCount) {
-    //print("cross axis count: $lastCrossAxisCount, $crossAxisCount");
     return crossAxisCount != lastCrossAxisCount; 
   }
 
@@ -134,6 +122,13 @@ class _MediaGridState extends State<MediaGrid> {
   }
 
   double calculateItemHeight(BuildContext context, double cellWidth) {
+    final padding = 8.0;
+    final imageHeight = cellWidth;
+
+    return imageHeight + padding;
+  }
+
+  double calculateExtendedItemHeight(BuildContext context, double cellWidth) {
     final textHeight = getTextHeight(style: DefaultTextStyle.of(context).style);
     final padding = 8.0;
     final imageHeight = cellWidth;
@@ -161,87 +156,3 @@ class _MediaGridState extends State<MediaGrid> {
   }
 }
 
-// TODO: add a context menu when right clicking on an imagetile
-
-class ImageTile extends StatefulWidget {
-  const ImageTile({
-    super.key,
-    required this.media,
-    required this.index,
-    required this.onTap,
-    required this.onTapShift,
-    this.tags = const [],
-  });
-
-  ImageTile.thumbnailUnavailable({
-    super.key,
-    required this.index,
-    required this.onTap,
-    required this.onTapShift,
-    this.tags = const [],
-  }) : media = FittedBox(fit: .cover, child: Icon(Icons.image));
-
-  final Widget media;
-  final int index;
-  final void Function(int index) onTap;
-  final void Function(int index) onTapShift;
-  final List<String> tags;
-
-  @override
-  State<ImageTile> createState() => _ImageTileState();
-}
-
-class _ImageTileState extends State<ImageTile> {
-  bool isHoveredOver = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final thumbnail = AspectRatio(
-      aspectRatio: 1,
-      child: ClipRRect(
-        borderRadius: BorderRadiusGeometry.all(.circular(8.0)),
-        clipBehavior: .antiAlias,
-        child: isHoveredOver
-            ? ColorFiltered(
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withValues(alpha: 0.2),
-                  BlendMode.darken,
-                ),
-                child: widget.media,
-              )
-            : widget.media,
-      ),
-    );
-
-    final tile = Column(
-      crossAxisAlignment: .stretch,
-      spacing: 8.0,
-      children: [
-        thumbnail,
-        Text(
-          widget.tags.take(4).map((element) => "#$element ").join(),
-          overflow: .ellipsis,
-        ),
-      ],
-    );
-
-    return GestureDetector(
-      onTap: () {
-        if (HardwareKeyboard.instance.isShiftPressed) {
-          widget.onTapShift(widget.index);
-        } else {
-          widget.onTap(widget.index);
-        }
-      },
-      child: MouseRegion(
-        onEnter: (_) => setState(() {
-          isHoveredOver = true;
-        }),
-        onExit: (_) => setState(() {
-          isHoveredOver = false;
-        }),
-        child: tile,
-      ),
-    );
-  }
-}

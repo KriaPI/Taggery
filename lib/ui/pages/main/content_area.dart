@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:taggery/state/gallery.dart';
 import 'package:taggery/state/tabs.dart';
 import 'package:taggery/state/models/settings.dart';
 import 'package:taggery/ui/components/buttons.dart';
+import 'package:taggery/ui/components/misc.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/pages/main/media_grid.dart';
 import 'package:taggery/ui/pages/main/image_viewer.dart';
@@ -56,11 +58,8 @@ class _ContentAreaState extends State<ContentArea> {
     );
 
     final splitViewViewer = Container(
-      decoration: BoxDecoration(
-        borderRadius: .circular(8.0),
-        color: colorScheme.surfaceContainerLow,
-      ),
-      padding: .fromLTRB(8, 8, 8, 0),
+      decoration: BoxDecoration(borderRadius: .circular(8.0)),
+      padding: .all(8.0),
       child: viewer,
     );
 
@@ -107,7 +106,7 @@ class _ContentAreaState extends State<ContentArea> {
       mainAxisAlignment: .spaceBetween,
       children: [
         SquareOutlinedIconButton(onPressed: () {}, icon: Icons.tune_rounded),
-        areaStateSelector
+        areaStateSelector,
       ],
     );
 
@@ -116,19 +115,30 @@ class _ContentAreaState extends State<ContentArea> {
         borderRadius: .circular(8.0),
         color: colorScheme.surfaceContainerLowest,
       ),
-      padding: .fromLTRB(8, 8, 8, 0),
+      padding: .fromLTRB(
+        DefaultSpacing.medium,
+        DefaultSpacing.small,
+        DefaultSpacing.medium,
+        0,
+      ),
       child: Column(
-        spacing: 8,
+        spacing: DefaultSpacing.large,
         children: [
           filtersAndViewControls,
-          Expanded(child: Row(
-            spacing: 16.0,
-            children: [
-              if (_viewMode == .gridExpanded || _viewMode == .splitView) ...[Expanded(child: grid)],
-              if (_viewMode == .splitView) ...[Expanded(child: splitViewViewer)],
-              if (_viewMode == .viewerExpanded) ...[Expanded(child: viewer)],
-            ],
-          )),
+          Expanded(
+            child: Row(
+              spacing: DefaultSpacing.small,
+              children: [
+                if (_viewMode == .gridExpanded || _viewMode == .splitView) ...[
+                  Expanded(child: grid),
+                ],
+                if (_viewMode == .splitView) ...[
+                  Expanded(child: splitViewViewer),
+                ],
+                if (_viewMode == .viewerExpanded) ...[Expanded(child: viewer)],
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -272,9 +282,9 @@ class StateSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const .symmetric(horizontal: 4.0),
+      padding: const .symmetric(horizontal: DefaultSpacing.small),
       child: Row(
-        spacing: 8.0,
+        spacing: DefaultSpacing.small,
         children: [
           GestureDetector(
             onTap: () => changeState(.gridExpanded),

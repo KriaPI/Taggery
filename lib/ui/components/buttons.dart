@@ -1,16 +1,5 @@
 import 'package:material_ui/material_ui.dart';
-
-/// An Icon widget with default weight and optical size.
-class IconWithDefaults extends StatelessWidget {
-  const IconWithDefaults(this.icon, {super.key, this.filled = false});
-  final IconData? icon;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(icon, weight: 400, opticalSize: 24, fill: filled ? 1.0 : 0.0);
-  }
-}
+import 'package:taggery/ui/components/misc.dart';
 
 
 class SquareOutlinedIconButton extends StatelessWidget {
