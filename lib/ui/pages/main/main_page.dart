@@ -1,22 +1,42 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
+import 'package:taggery/ui/components/misc.dart';
 import 'package:taggery/ui/pages/main/content_area.dart';
-import 'package:taggery/ui/components/header.dart';
+import 'package:taggery/ui/pages/main/header.dart';
 
-class MainPage extends StatelessWidget {
+class MainPage extends StatefulWidget {
   const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  ContentAreaViewMode _viewMode = .gridExpanded;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.only(top: 16.0),
+        padding: EdgeInsets.only(top: _viewMode == .viewerExpanded ? 0 : DefaultSpacing.large),
         child: Column(
-          spacing: 16.0,
+          spacing: DefaultSpacing.large,
           children: [
-          PageHeader(),
-          Expanded(child: const ContentArea())
-          ]
+            if (_viewMode != .viewerExpanded) Padding(
+              padding: const .symmetric(horizontal: DefaultSpacing.extraLarge),
+              child: PageHeader(),
+            ),
+            Expanded(
+              child: ContentArea(
+                viewMode: _viewMode,
+                changeViewMode: (newViewMode) {
+                  setState(() {
+                    _viewMode = newViewMode;
+                  });
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

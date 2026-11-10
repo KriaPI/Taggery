@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taggery/state/settings.dart';
 import 'package:taggery/ui/components/containers.dart';
-import 'package:taggery/ui/components/text_variants.dart';
+import 'package:taggery/ui/components/text.dart';
 import 'package:taggery/ui/pages/main/main_page.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -38,13 +38,13 @@ class GeneralSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: .start,
         children: [
-          TitleTextLarge("General"),
+          TitleText("General", size: .large),
           Flexible(
             child: ListView(
               children: [
                 ListTile(
                   contentPadding: EdgeInsets.all(0),
-                  title: TitleTextSmall("Source directory"),
+                  title: TitleText("Source directory", size: .small),
                   subtitle: BodyText("fsfnsl"),
                   trailing: OutlinedButton(
                     onPressed: () {

@@ -54,8 +54,8 @@ class SquareTonalIconButton extends StatelessWidget {
       style: IconButton.styleFrom(
         foregroundColor: (colorScheme.onSurfaceVariant),
         backgroundColor: (colorScheme.surfaceContainer),
-        minimumSize: Size(56.0, 56.0),
-        shape: RoundedRectangleBorder(borderRadius: .all(.circular(16.0))),
+        minimumSize: Size(40.0, 40.0),
+        shape: RoundedRectangleBorder(borderRadius: .all(.circular(12.0))),
       ),
       onPressed: onPressed,
       icon: IconWithDefaults(icon),
@@ -90,7 +90,7 @@ class SquareTonalTextButton extends StatelessWidget {
     final textStyle = Theme.of(context).textTheme.titleMedium;
 
     return SizedBox(
-      height: 56,
+      height: 40,
       child: TextButton.icon(
         icon: IconWithDefaults(isSelected ? selectedIcon : icon),
         label: Text(label),
@@ -101,7 +101,7 @@ class SquareTonalTextButton extends StatelessWidget {
           foregroundColor: (colorScheme.onSurfaceVariant),
           backgroundColor: (colorScheme.surfaceContainer),
           minimumSize: Size(56.0, 56.0),
-          shape: RoundedRectangleBorder(borderRadius: .all(.circular(16.0))),
+          shape: RoundedRectangleBorder(borderRadius: .all(.circular(12.0))),
         ),
         onPressed: onPressed,
       ),

@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:taggery/state/settings.dart';
-import 'package:taggery/ui/components/text_variants.dart';
+import 'package:taggery/ui/components/text.dart';
 
 class SetupPage extends StatelessWidget {
   const SetupPage({super.key});
@@ -74,7 +74,7 @@ class PickRootFolderDialog extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        TitleTextMedium(messageTitle),
+        TitleText(messageTitle),
         BodyText(messageBody),
         SizedBox(height: 16.0),
         FilledButton.icon(

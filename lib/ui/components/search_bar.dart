@@ -28,85 +28,92 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return SearchAnchor(
-      searchController: widget.searchController,
-      shrinkWrap: true,
-      builder: (context, controller) {
-        final colorScheme = Theme.of(context).colorScheme;
-
-        final textStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        );
-
-        return SearchBar(
-          textStyle: .all(textStyle),
-          autoFocus: false,
-          controller: controller,
-          hintText: "Search in gallery",
-          elevation: WidgetStatePropertyAll(0.0),
-          overlayColor: .all(Colors.transparent),
-          leading: IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // Closes the view and submits the current text input
-              widget.searchController.closeView(widget.searchController.text);
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: 1000,
+        minHeight: 40,
+        maxHeight: 40
+      ),
+      child: SearchAnchor(
+        searchController: widget.searchController,
+        shrinkWrap: true,
+        builder: (context, controller) {
+          final colorScheme = Theme.of(context).colorScheme;
+      
+          final textStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          );
+      
+          return SearchBar(
+            textStyle: .all(textStyle),
+            autoFocus: false,
+            controller: controller,
+            hintText: "Search in gallery",
+            elevation: WidgetStatePropertyAll(0.0),
+            overlayColor: .all(Colors.transparent),
+            leading: IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                // Closes the view and submits the current text input
+                widget.searchController.closeView(widget.searchController.text);
+              },
+            ),
+            onTap: () {
+              refreshResults();
+              controller.openView();
             },
-          ),
-          onTap: () {
-            refreshResults();
-            controller.openView();
+            onChanged: (value) {
+              context.read<SearchSuggestionCubit>().loadSearchOptions(value);
+            },
+            onSubmitted: (value) {
+              widget.searchController.closeView(value);
+              final result = context
+                  .read<SearchSuggestionCubit>()
+                  .state
+                  .items
+                  .firstWhere((option) => option.$1 == value);
+              showResults(result.$2);
+            },
+          );
+        },
+        dividerColor: Colors.transparent,
+        viewLeading: IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: () {
+            // Closes the view and submits the current text input
+            widget.searchController.closeView(widget.searchController.text);
           },
-          onChanged: (value) {
-            context.read<SearchSuggestionCubit>().loadSearchOptions(value);
-          },
-          onSubmitted: (value) {
-            widget.searchController.closeView(value);
-            final result = context
-                .read<SearchSuggestionCubit>()
-                .state
-                .items
-                .firstWhere((option) => option.$1 == value);
-            showResults(result.$2);
-          },
-        );
-      },
-      dividerColor: Colors.transparent,
-      viewLeading: IconButton(
-        icon: const Icon(Icons.search),
-        onPressed: () {
-          // Closes the view and submits the current text input
-          widget.searchController.closeView(widget.searchController.text);
+        ),
+        suggestionsBuilder: (context, controller) {
+          return [
+            BlocBuilder<SearchSuggestionCubit, SearchState>(
+              builder: (context, state) {
+                if (state.status != SearchStatus.initial) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: state.items.map((suggestion) {
+                      final (name, directory) = suggestion;
+                      return ListTile(
+                        onTap: () {
+                          controller.closeView(name);
+                          showResults(directory);
+                        },
+                        title: Text(name),
+                        subtitle: Text(directory.path),
+                      );
+                    }).toList(),
+                  );
+                }
+      
+                return const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text("Empty"),
+                );
+              },
+            ),
+          ];
         },
       ),
-      suggestionsBuilder: (context, controller) {
-        return [
-          BlocBuilder<SearchSuggestionCubit, SearchState>(
-            builder: (context, state) {
-              if (state.status != SearchStatus.initial) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: state.items.map((suggestion) {
-                    final (name, directory) = suggestion;
-                    return ListTile(
-                      onTap: () {
-                        controller.closeView(name);
-                        showResults(directory);
-                      },
-                      title: Text(name),
-                      subtitle: Text(directory.path),
-                    );
-                  }).toList(),
-                );
-              }
-
-              return const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text("Empty"),
-              );
-            },
-          ),
-        ];
-      },
     );
   }
 

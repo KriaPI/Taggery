@@ -21,12 +21,14 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
 
-  final window = WindowManager.instance.getCurrent()!;
+  final window = WindowManager.instance.getCurrent();
 
-  window.title = "Taggery";
-  window.minimumSize = const Size(900, 500).toNative();
-  window.center();
-  window.maximize();
+  if (window != null) {
+    window.title = "Taggery";
+    window.minimumSize = const Size(900, 500).toNative();
+    window.center();
+    window.maximize();
+  }
 
   final settingsRepository = SettingsRepository();
   final galleryRepository = GalleryRepository();

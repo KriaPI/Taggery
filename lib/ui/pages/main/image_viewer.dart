@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_ui/material_ui.dart';
@@ -9,20 +8,10 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:taggery/state/tabs.dart';
 import 'package:taggery/ui/components/containers.dart';
 import 'package:taggery/ui/components/misc.dart';
-import 'package:taggery/ui/components/text_variants.dart';
-import 'package:taggery/ui/components/toolbar.dart';
-import 'package:taggery/ui/configuration/default_keybindings.dart';
-
-// TODO: add indicators/controls for zoom and rotation.
-
-// dart format off
-const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
-  0.2126, 0.7152, 0.0722, 0, 0,
-  0.2126, 0.7152, 0.0722, 0, 0, 
-  0.2126, 0.7152, 0.0722, 0, 0, 
-  0, 0, 0, 1, 0,
-]);
-// dart format on
+import 'package:taggery/ui/components/viewer/controls.dart';
+import 'package:taggery/ui/components/viewer/tab_components.dart';
+import 'package:taggery/ui/components/viewer/video_controls.dart';
+import 'package:taggery/ui/components/viewer/viewer_areas.dart';
 
 /// This widget contains the header for the viewer and the viewer itself as a child.
 ///
@@ -34,12 +23,14 @@ class ImageViewerContainer extends StatefulWidget {
     required this.primaryIndex,
     required this.onPrevious,
     required this.onNext,
+    this.viewModeControls,
   });
 
   /// The index of the gallery entry shown in the first tab. This is used to compare in didWidgetUpdate().
   final int primaryIndex;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final Widget? viewModeControls;
 
   @override
   State<StatefulWidget> createState() => ImageViewerContainerState();
@@ -48,62 +39,56 @@ class ImageViewerContainer extends StatefulWidget {
 class ImageViewerContainerState extends State<ImageViewerContainer>
     with TickerProviderStateMixin {
   late TabController _tabController;
-
-  /// The map of callbacks called to execute keyboard shortcuts.
-  late Map<Type, Action<Intent>> viewerActions;
-
-  /// Whether or not the controls for the viewer should be shown at all times, or only shown when the user hovers over
-  /// the space they normally occupy.
-  bool _pinControls = true;
-
-  /// True if the viewer's media content should be should in black-and-white.
+  bool _alwaysShowControls = true;
   bool _isMonochrome = false;
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Move actions to imageViewer.
-    return Actions(
-      actions: viewerActions,
-      child: Focus(
-        autofocus: true,
-        child: Column(
-          spacing: DefaultSpacing.small,
-          children: [
-            SizedBox(
-              height: 32,
-              child: BlocConsumer<TabCubit, List<TabState>>(
-                listener: (context, state) {
-                  // Update the length of the tab controller to match the cubit.
-                  // The length is +1 because there is always an additional tab open
-                  // that allows the user to navigate between gallery items (images/videos).
-                  _updateTabController(state.length);
-                },
-                builder: (context, tabs) => ViewerTabBar(
-                  tabController: _tabController,
-                  tabTitles: tabs.map((entry) => entry.content.name).toList(),
-                  onCloseTab: (index) {
-                    context.read<TabCubit>().closeTab(index);
+    return Column(
+      spacing: DefaultSpacing.small,
+      children: [
+        SizedBox(
+          height: 24,
+          child: Row(
+            children: [
+              Expanded(
+                child: BlocConsumer<TabCubit, List<TabState>>(
+                  listener: (context, state) {
+                    // Update the length of the tab controller to match the cubit.
+                    // The length is +1 because there is always an additional tab open
+                    // that allows the user to navigate between gallery items (images/videos).
+                    _updateTabController(state.length);
                   },
+                  builder: (context, tabs) => ViewerTabBar(
+                    tabController: _tabController,
+                    tabTitles: tabs.map((entry) => entry.content.name).toList(),
+                    onCloseTab: (index) {
+                      context.read<TabCubit>().closeTab(index);
+                    },
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: BlocBuilder<TabCubit, List<TabState>>(
-                builder: (context, tabs) => ImageViewer(
-                  key: ValueKey(widget.primaryIndex),
-                  tabController: _tabController,
-                  onPrevious: widget.onPrevious,
-                  onNext: widget.onNext,
-                  onTogglePinControls: togglePinControls,
-                  onToggleMonochrome: toggleMonochrome,
-                  areControlsPinned: _pinControls,
-                  showMonochrome: _isMonochrome,
-                ),
-              ),
-            ),
-          ],
+              if (widget.viewModeControls != null) ...[
+                widget.viewModeControls!,
+              ],
+            ],
+          ),
         ),
-      ),
+        Expanded(
+          child: BlocBuilder<TabCubit, List<TabState>>(
+            builder: (context, tabs) => ImageViewer(
+              key: ValueKey(widget.primaryIndex),
+              tabController: _tabController,
+              onPrevious: widget.onPrevious,
+              onNext: widget.onNext,
+              onTogglePinControls: togglePinControls,
+              onToggleMonochrome: toggleMonochrome,
+              areControlsPinned: _alwaysShowControls,
+              showMonochrome: _isMonochrome,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -116,24 +101,11 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
       animationDuration: Duration.zero,
     );
 
-    viewerActions = {
-      if (_tabController.index == 0) ...{
-        PreviousIntent: CallbackAction<PreviousIntent>(
-          onInvoke: (intent) => widget.onPrevious(),
-        ),
-        NextIntent: CallbackAction<NextIntent>(
-          onInvoke: (intent) => widget.onNext(),
-        ),
-      },
-    };
-
-    _tabController.addListener(_updateShortCuts);
     super.initState();
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
     super.dispose();
   }
@@ -150,25 +122,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
     }
   }
 
-  /// Update the map of shortcut actions. Disables the left and right arrow actions
-  /// if the any other tab than the first is being viewed.
-  void _updateShortCuts() {
-    final newViewerActions = {
-      if (_tabController.index == 0) ...{
-        PreviousIntent: CallbackAction<PreviousIntent>(
-          onInvoke: (intent) => widget.onPrevious(),
-        ),
-        NextIntent: CallbackAction<NextIntent>(
-          onInvoke: (intent) => widget.onNext(),
-        ),
-      },
-    };
-
-    setState(() {
-      viewerActions = newViewerActions;
-    });
-  }
-
   /// Get the index of the tab that was opened.
   int _getNewTabIndex(int newLength, int previousIndex) {
     return newLength >= 2 && previousIndex != 0 ? 1 : 0;
@@ -179,7 +132,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
     if (_tabController.length == newLength) return;
 
     final newCurrentIndex = _getNewTabIndex(newLength, _tabController.index);
-    _tabController.removeListener(_updateShortCuts);
     _tabController.dispose();
 
     setState(() {
@@ -190,8 +142,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
         initialIndex: newCurrentIndex,
       );
     });
-
-    _tabController.addListener(_updateShortCuts);
   }
 
   void toggleMonochrome() {
@@ -202,184 +152,8 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 
   void togglePinControls() {
     setState(() {
-      _pinControls = !_pinControls;
+      _alwaysShowControls = !_alwaysShowControls;
     });
-  }
-}
-
-/// A scrollable tab bar with separators between tabs.
-///
-/// The separators dissappear whenever the user hovers over or selects a tab where there would normally be
-/// separators next to it.
-class ViewerTabBar extends StatefulWidget {
-  const ViewerTabBar({
-    super.key,
-    required this.tabController,
-    required this.tabTitles,
-    required this.onCloseTab,
-  });
-  final TabController tabController;
-  final List<String> tabTitles;
-
-  /// A callback to call when a tab is closed. This should update the list that [tabTitles] is derived from.
-  final void Function(int index) onCloseTab;
-
-  @override
-  State<ViewerTabBar> createState() => _ViewerTabBarState();
-}
-
-class _ViewerTabBarState extends State<ViewerTabBar> {
-  int? _hoveredIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: widget.tabController,
-      builder: (context, _) {
-        final selectedIndex = widget.tabController.index;
-
-        return ListView.separated(
-          scrollDirection: .horizontal,
-          itemBuilder: (context, index) {
-            return ViewerTab(
-              name: widget.tabTitles[index],
-              onTap: () {
-                widget.tabController.index = index;
-              },
-              onHover: (isHovered) {
-                setState(() {
-                  _hoveredIndex = isHovered ? index : null;
-                });
-              },
-              onClose: () {
-                widget.onCloseTab(index);
-              },
-              isClosable: index != 0,
-              isSelected: index == selectedIndex,
-              isHovered: index == _hoveredIndex,
-            );
-          },
-          separatorBuilder: (context, index) {
-            final isAdjacentToSelected =
-                index == selectedIndex || index + 1 == selectedIndex;
-            final isAdjacentToHovered =
-                index == _hoveredIndex || index + 1 == _hoveredIndex;
-
-            final isHidden = isAdjacentToSelected || isAdjacentToHovered;
-
-            final separatorColor = Theme.of(context).colorScheme.outlineVariant;
-
-            return SizedBox(
-              width: 18,
-              child: Center(
-                child: AnimatedOpacity(
-                  duration: Durations.short3,
-                  curve: Curves.easeOut,
-                  opacity: isHidden ? 0.0 : 1.0,
-                  child: Container(
-                    width: 2,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: separatorColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-          itemCount: widget.tabTitles.length,
-        );
-      },
-    );
-  }
-}
-
-/// A tab in the viewer's tab bar.
-///
-/// The tab changes color when the user hovers over it or when it is selected.
-class ViewerTab extends StatelessWidget {
-  const ViewerTab({
-    super.key,
-    required this.name,
-    required this.onTap,
-    required this.onHover,
-    required this.onClose,
-    required this.isClosable,
-    this.isSelected = false,
-    this.isHovered = false,
-  });
-
-  /// The text that will appear in the tab.
-  final String name;
-
-  /// The function to call when this tab is pressed. This should update the tab bar's currently selected tab.
-  final VoidCallback onTap;
-
-  final ValueChanged<bool> onHover;
-
-  /// The function to call when the tab's close button is pressed.
-  final VoidCallback onClose;
-
-  final bool isClosable;
-  final bool isSelected;
-  final bool isHovered;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget content = Text(name, overflow: .fade, maxLines: 1, softWrap: false);
-    content = isClosable
-        ? Row(
-            mainAxisAlignment: .spaceBetween,
-            crossAxisAlignment: .center,
-            mainAxisSize: .min,
-            spacing: 8,
-            children: [
-              Expanded(child: content),
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: IconButton(
-                  iconSize: 14,
-                  padding: .zero,
-                  onPressed: onClose,
-                  icon: Icon(Icons.close),
-                ),
-              ),
-            ],
-          )
-        : content;
-
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final backgroundColor = isSelected
-        ? colorScheme.surfaceContainer
-        : (isHovered
-              ? colorScheme.surfaceContainer.withValues(alpha: 0.7)
-              : Colors.transparent);
-
-    // TODO: change color depending on the elevation level (number of widgets this sits on top of).
-    return Tooltip(
-      message: name,
-      child: Material(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8.0),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          onHover: onHover,
-          hoverColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          borderRadius: BorderRadius.circular(8.0),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 160),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            alignment: Alignment.centerLeft,
-            child: content,
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -451,40 +225,51 @@ class _ImageViewerState extends State<ImageViewer> {
           onTapPinOrUnpin: widget.onTogglePinControls,
           monochromeToggled: widget.showMonochrome,
           isPinned: widget.areControlsPinned,
-          disableFitOption: isCurrentlyVideo,
           disableOpenInNewTabOption: widget.tabController.index != 0,
-          compact: isCurrentlyVideo,
         );
-        final videoControls = VideoControls(
-          player: player,
-          compact: isCurrentlyVideo,
-        );
+
+        final playbackControls = VideoControls(player: player, compact: true);
         final videoTimeline = Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: DefaultSpacing.small),
           child: VideoTimeline(player: player),
         );
 
-        final controls = isCurrentlyVideo
-            ? Column(
-                mainAxisAlignment: .end,
-                children: [
-                  videoTimeline,
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                    child: Row(
-                      mainAxisAlignment: .spaceBetween,
-                      children: [videoControls, imageControls],
-                    ),
-                  ),
-                ],
-              )
-            : Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 16.0,
-                ),
-                child: imageControls,
-              );
+        final videoControls = Column(
+          mainAxisAlignment: .end,
+          crossAxisAlignment: .start,
+          children: [
+            videoTimeline,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: playbackControls,
+            ),
+          ],
+        );
+
+        final backAndNext = Row(
+          mainAxisAlignment: .spaceBetween,
+          crossAxisAlignment: .stretch,
+          children: [
+            IconButton(
+              onPressed: widget.onPrevious,
+              icon: IconWithDefaults(
+                Symbols.chevron_backward_rounded,
+                color: Colors.white,
+              ),
+              iconSize: 40,
+            ),
+            IconButton(
+              onPressed: widget.onNext,
+              icon: IconWithDefaults(
+                Symbols.chevron_forward_rounded,
+                color: Colors.white,
+              ),
+              iconSize: 40,
+            ),
+          ],
+        );
+
+        final isPrimaryWidget = widget.tabController.index == 0;
 
         return Container(
           decoration: BoxDecoration(
@@ -499,11 +284,31 @@ class _ImageViewerState extends State<ImageViewer> {
                 physics: const NeverScrollableScrollPhysics(),
                 children: mediaAreas,
               ),
-              Column(
-                mainAxisSize: .min,
-                children: [
-                  Pinnable(isPinned: widget.areControlsPinned, child: controls),
-                ],
+              if (isPrimaryWidget)
+                Center(
+                  child: Padding(
+                    padding: .symmetric(horizontal: DefaultSpacing.small),
+                    child: backAndNext,
+                  ),
+                ),
+              Positioned.fill(
+                child: Padding(
+                  padding: const .all(8.0),
+                  child: Column(
+                    mainAxisAlignment: isCurrentlyVideo
+                        ? .spaceBetween
+                        : .start,
+                    crossAxisAlignment: .start,
+                    children: [
+                      imageControls,
+                      if (isCurrentlyVideo)
+                        Pinnable(
+                          isPinned: widget.areControlsPinned,
+                          child: videoControls,
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -602,494 +407,5 @@ class _ImageViewerState extends State<ImageViewer> {
       conditionallyPlayVideo();
     });
     setState(() {});
-  }
-}
-
-enum PageFit { page, height, width }
-
-/// A toolbar containing controls for image viewing.
-class ImageControls extends StatelessWidget {
-  const ImageControls({
-    super.key,
-    required this.onTapPageFit,
-    required this.onTapBWFilter,
-    required this.onTapColorPicker,
-    required this.onTapDetails,
-    required this.onTapOpenInNewTab,
-    required this.onTapPinOrUnpin,
-    required this.monochromeToggled,
-    required this.isPinned,
-    this.fit = PageFit.page,
-    this.disableFitOption = false,
-    this.disableOpenInNewTabOption = false,
-    this.compact = false,
-  });
-  final bool compact;
-  final VoidCallback onTapPageFit;
-  final VoidCallback onTapBWFilter;
-  final VoidCallback onTapColorPicker;
-  final VoidCallback onTapDetails;
-  final VoidCallback onTapOpenInNewTab;
-  final VoidCallback onTapPinOrUnpin;
-
-  final PageFit fit;
-  final bool disableFitOption;
-  final bool disableOpenInNewTabOption;
-  final bool monochromeToggled;
-  final bool isPinned;
-
-  @override
-  Widget build(BuildContext context) {
-    final children = [
-      if (!disableFitOption) ...[
-        IconButton(
-          tooltip: ["Fit to page", "Fit to height", "Fit to width"][fit.index],
-          icon: Icon(
-            [
-              Symbols.fit_page_rounded,
-              Symbols.fit_page_height_rounded,
-              Symbols.fit_page_width_rounded,
-            ][fit.index],
-          ),
-          onPressed: onTapPageFit,
-        ),
-      ],
-      IconButton(
-        tooltip: "Toggle monochrome filter",
-        icon: Icon(Icons.filter_b_and_w_outlined),
-        selectedIcon: Icon(Icons.filter_b_and_w_rounded),
-        isSelected: monochromeToggled,
-        onPressed: onTapBWFilter,
-      ),
-      IconButton(
-        tooltip: "Color picker",
-        icon: Icon(Icons.colorize_rounded),
-        onPressed: onTapColorPicker,
-      ),
-      IconButton(
-        tooltip: "Details",
-        icon: Icon(Symbols.info_i_rounded),
-        onPressed: onTapDetails,
-      ),
-      if (!disableOpenInNewTabOption) ...[
-        IconButton(
-          tooltip: "Open in new tab",
-          icon: Icon(Icons.open_in_new_rounded),
-          onPressed: onTapOpenInNewTab,
-        ),
-      ],
-      IconButton(
-        tooltip: isPinned ? "Unpin" : "Pin",
-        selectedIcon: Icon(Icons.arrow_drop_down_rounded),
-        icon: Icon(Icons.arrow_drop_up_rounded),
-        isSelected: isPinned,
-        onPressed: onTapPinOrUnpin,
-      ),
-    ];
-
-    return compact
-        ? FloatingToolBar.compact(children: children)
-        : FloatingToolBar(children: children);
-  }
-}
-
-/// A toolbar containing controls for video playback.
-class VideoControls extends StatelessWidget {
-  const VideoControls({super.key, required this.player, this.compact = false});
-  final bool compact;
-  final Player player;
-
-  @override
-  Widget build(BuildContext context) {
-    final children = [
-      StreamBuilder(
-        stream: player.stream.playing,
-        builder: (context, snapshot) {
-          final isPlaying = snapshot.hasData ? snapshot.data! : false;
-
-          return IconButton(
-            tooltip: !isPlaying ? "Resume" : "Pause",
-            icon: Icon(
-              !isPlaying ? Icons.play_arrow_rounded : Icons.pause_rounded,
-            ),
-            onPressed: player.playOrPause,
-          );
-        },
-      ),
-      StreamBuilder(
-        stream: player.stream.volume,
-        builder: (context, snapshot) {
-          final isMuted = snapshot.hasData ? snapshot.data! == 0 : false;
-
-          return IconButton(
-            tooltip: isMuted ? "Unmute" : "Mute",
-            icon: Icon(
-              isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
-            ),
-            onPressed: () {
-              isMuted ? player.setVolume(100.0) : player.setVolume(0);
-            },
-          );
-        },
-      ),
-      VideoDurationIndicator(player: player),
-    ];
-
-    return compact
-        ? FloatingToolBar.compact(children: children)
-        : FloatingToolBar(children: children);
-  }
-}
-
-// TODO: make the stream for videoDurationIndicator only emit a value every second, except when the tab is changed (since it would
-// otherwise take one second for the new position / length indication to show up). This can likely be done with stream_transform audit
-// and a stream controller.
-
-class VideoDurationIndicator extends StatefulWidget {
-  const VideoDurationIndicator({super.key, required this.player});
-  final Player player;
-
-  @override
-  State<VideoDurationIndicator> createState() => _VideoDurationIndicatorState();
-}
-
-class _VideoDurationIndicatorState extends State<VideoDurationIndicator> {
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: widget.player.stream.position,
-      initialData: widget.player.state.position,
-      builder: (context, snapshot) {
-        final value = snapshot.data!;
-        final videoDuration = widget.player.state.duration;
-
-        final lengthTimeStamp = formatTimestamp(videoDuration);
-        final playBackTimeStamp = formatTimestamp(value);
-
-        return TimeStampText("$playBackTimeStamp / $lengthTimeStamp");
-      },
-    );
-  }
-
-  String formatTimestamp(Duration time) {
-    final hours = time.inHours;
-    final minutes = time.inMinutes % 60;
-    final seconds = time.inSeconds % 60;
-
-    final hoursText = getTimeStampPart(hours);
-    final minutesText = getTimeStampPart(minutes);
-    final secondsText = getTimeStampPart(seconds);
-
-    if (hours > 0) {
-      return "$hoursText:$secondsText:$minutesText";
-    }
-    return "$minutesText:$secondsText";
-  }
-
-  String getTimeStampPart(int value) {
-    return value < 10 ? "0$value" : "$value";
-  }
-}
-
-class VideoTimeline extends StatefulWidget {
-  const VideoTimeline({super.key, required this.player});
-  final Player player;
-
-  @override
-  State<VideoTimeline> createState() => _VideoTimelineState();
-}
-
-class _VideoTimelineState extends State<VideoTimeline> {
-  bool _isDragging = false;
-  bool _wasPausedBeforeChange = false;
-  bool _isHovering = false;
-  double _secondaryTrackValue = 0.0;
-  double _trackValue = 0.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: widget.player.stream.position,
-      initialData: widget.player.state.position,
-      builder: (context, snapshot) {
-        if (snapshot.data != null) {
-          _trackValue = snapshot.data!.inMilliseconds / 1000.0;
-        }
-
-        final value = _trackValue;
-        final videoDuration = widget.player.state.duration;
-        final maxValue = videoDuration == Duration.zero
-            ? 1.0
-            : videoDuration.inMilliseconds / 1000.0;
-
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final double trackWidth = constraints.maxWidth;
-
-            final double indicatorValue = _isDragging
-                ? value
-                : _secondaryTrackValue;
-
-            final double thumbFraction = (indicatorValue / maxValue).clamp(
-              0.0,
-              1.0,
-            );
-            final double indicatorOffsetX = trackWidth * thumbFraction;
-
-            return MouseRegion(
-              onEnter: (_) => setState(() => _isHovering = true),
-              onExit: (_) => setState(() => _isHovering = false),
-              onHover: (event) {
-                final RenderBox box = context.findRenderObject()! as RenderBox;
-                final Offset localPosition = box.globalToLocal(event.position);
-
-                final double newValue =
-                    (localPosition.dx / box.size.width) * (maxValue);
-                setState(() {
-                  _secondaryTrackValue = newValue.clamp(0.0, maxValue);
-                });
-              },
-              child: Stack(
-                clipBehavior: .none,
-                children: [
-                  if (_isHovering || _isDragging) ...[
-                    Positioned(
-                      left: indicatorOffsetX,
-                      bottom: 32.0,
-                      child: FractionalTranslation(
-                        translation: const Offset(
-                          -0.5,
-                          0.0,
-                        ), // Center horizontally on cursor
-                        child: Card(
-                          elevation: 0.0,
-                          color: Theme.of(context).colorScheme.inverseSurface
-                              .withValues(alpha: 0.2),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                              vertical: 4.0,
-                            ),
-                            child: Text(
-                              formatTimestamp(indicatorValue),
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onInverseSurface,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                  Slider(
-                    padding: .all(0),
-                    value: value,
-                    max: maxValue,
-                    secondaryTrackValue: _secondaryTrackValue.clamp(0, 1.0),
-                    onChangeStart: (value) {
-                      _wasPausedBeforeChange = widget.player.state.playing;
-                      widget.player.pause();
-                      setState(() {
-                        _isDragging = true;
-                      });
-                    },
-                    onChangeEnd: (value) {
-                      if (_wasPausedBeforeChange) {
-                        widget.player.play();
-                      }
-                      setState(() {
-                        _secondaryTrackValue = value;
-                        _isDragging = false;
-                      });
-                    },
-                    onChanged: (value) {
-                      final duration = Duration(
-                        milliseconds: (value * 1000).round(),
-                      );
-                      widget.player.seek(duration);
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  String formatTimestamp(double seconds) {
-    final duration = Duration(milliseconds: (seconds * 1000).round());
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final secs = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-
-    if (hours > 0) {
-      return '$hours:$minutes:$secs';
-    }
-    return '$minutes:$secs';
-  }
-}
-
-// TODO: fix zooming with trackpad. Should zoom to where the mouse is at, but instead zooms into the nearest corner.
-
-/// A widget that allows for panning, zooming, and applying a monochrome filter on an image.
-class ImageArea extends StatefulWidget {
-  const ImageArea({
-    super.key,
-    required this.source,
-    required this.isMonochrome,
-  });
-  final File source;
-  final bool isMonochrome;
-
-  @override
-  State<ImageArea> createState() => _ImageAreaState();
-}
-
-class _ImageAreaState extends State<ImageArea> {
-  late final TransformationController _transformationController;
-  bool _isZoomedIn = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _transformationController = TransformationController();
-    _transformationController.addListener(_onTransformationChanged);
-  }
-
-  void _onTransformationChanged() {
-    final double scale = _transformationController.value.getMaxScaleOnAxis();
-    final bool zoomedIn = scale > 1.05;
-
-    if (zoomedIn != _isZoomedIn) {
-      setState(() {
-        _isZoomedIn = zoomedIn;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _transformationController.removeListener(_onTransformationChanged);
-    _transformationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: _isZoomedIn
-          ? SystemMouseCursors.allScroll
-          : SystemMouseCursors.basic,
-      child: ClipRRect(
-        borderRadius: .circular(8.0),
-        child: InteractiveViewer(
-          constrained: true,
-          transformationController: _transformationController,
-          clipBehavior: Clip.antiAlias,
-          minScale: 1.0,
-          maxScale: 10.0,
-          child: SizedBox.expand(
-            child: widget.isMonochrome
-                ? ColorFiltered(
-                    colorFilter: grayscaleFilter,
-                    child: Image.file(
-                      widget.source,
-                      gaplessPlayback: true,
-                      fit: .contain,
-                    ),
-                  )
-                : Image.file(
-                    widget.source,
-                    gaplessPlayback: true,
-                    fit: .contain,
-                  ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A widget that allows for panning, zooming, and applying a monochrome filter on a video.
-class VideoArea extends StatefulWidget {
-  const VideoArea({
-    super.key,
-    required this.source,
-    required this.isMonochrome,
-    required this.videoController,
-    required this.onTap,
-  });
-  final File source;
-  final bool isMonochrome;
-  final VideoController videoController;
-  final VoidCallback onTap;
-
-  @override
-  State<VideoArea> createState() => _VideoAreaState();
-}
-
-class _VideoAreaState extends State<VideoArea> {
-  late final TransformationController _transformationController;
-  bool _isZoomedIn = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _transformationController = TransformationController();
-    _transformationController.addListener(_onTransformationChanged);
-  }
-
-  void _onTransformationChanged() {
-    final double scale = _transformationController.value.getMaxScaleOnAxis();
-    final bool zoomedIn = scale > 1.05;
-
-    if (zoomedIn != _isZoomedIn) {
-      setState(() {
-        _isZoomedIn = zoomedIn;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _transformationController.removeListener(_onTransformationChanged);
-    _transformationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final video = Video(
-      controller: widget.videoController,
-      fit: .contain,
-      controls: NoVideoControls,
-    );
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: MouseRegion(
-        cursor: _isZoomedIn
-            ? SystemMouseCursors.allScroll
-            : SystemMouseCursors.basic,
-        child: ClipRRect(
-          borderRadius: .circular(8.0),
-          child: InteractiveViewer(
-            transformationController: _transformationController,
-            clipBehavior: Clip.antiAlias,
-            minScale: 1.0,
-            maxScale: 10.0,
-            child: SizedBox.expand(
-              child: widget.isMonochrome
-                  ? ColorFiltered(colorFilter: grayscaleFilter, child: video)
-                  : video,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

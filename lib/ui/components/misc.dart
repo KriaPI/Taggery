@@ -27,17 +27,19 @@ class IconWithDefaults extends StatelessWidget {
     super.key,
     this.filled = false,
     this.color,
+    this.size
   });
   final IconData? icon;
   final bool filled;
   final Color? color;
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
     return Icon(
       icon,
       weight: 400,
-      opticalSize: 24,
+      opticalSize: size ?? 24,
       fill: filled ? 1.0 : 0.0,
       color: color ?? Theme.of(context).colorScheme.onSurface,
     );

@@ -8,9 +8,8 @@ import 'package:taggery/state/models/gallery.dart';
 import 'package:taggery/state/gallery.dart';
 import 'package:taggery/state/tabs.dart';
 import 'package:taggery/state/models/settings.dart';
-import 'package:taggery/ui/components/buttons.dart';
 import 'package:taggery/ui/components/misc.dart';
-import 'package:taggery/ui/components/text_variants.dart';
+import 'package:taggery/ui/components/text.dart';
 import 'package:taggery/ui/pages/main/media_grid.dart';
 import 'package:taggery/ui/pages/main/image_viewer.dart';
 
@@ -25,7 +24,13 @@ enum ContentAreaViewMode { gridExpanded, splitView, viewerExpanded }
 /// opened when a tile of the gallery grid is clicked on. This state includes the list of image shown
 /// in the grid (and viewer) and the index of the list that is currently shown in the viewer.
 class ContentArea extends StatefulWidget {
-  const ContentArea({super.key});
+  const ContentArea({
+    super.key,
+    required this.viewMode,
+    required this.changeViewMode,
+  });
+  final ContentAreaViewMode viewMode;
+  final void Function(ContentAreaViewMode newViewMode) changeViewMode;
 
   @override
   State<StatefulWidget> createState() => _ContentAreaState();
@@ -33,7 +38,6 @@ class ContentArea extends StatefulWidget {
 
 class _ContentAreaState extends State<ContentArea> {
   final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image viewer");
-  ContentAreaViewMode _viewMode = .gridExpanded;
 
   /// The index of the gallery entry that the primary tab is showing.
   int primaryTabIndex = 0;
@@ -41,6 +45,18 @@ class _ContentAreaState extends State<ContentArea> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+
+    final areaStateSelector = StateSelector(
+      state: widget.viewMode,
+      changeState: (ContentAreaViewMode newState) => setState(() {
+        widget.changeViewMode(newState);
+      }),
+    );
+
+    final filtersAndViewControls = Row(
+      mainAxisAlignment: .spaceBetween,
+      children: [const SizedBox(width: 10, height: 10), areaStateSelector],
+    );
 
     final viewer = BlocBuilder<GalleryCubit, GalleryState>(
       builder: (context, state) {
@@ -50,6 +66,9 @@ class _ContentAreaState extends State<ContentArea> {
             primaryIndex: primaryTabIndex,
             onPrevious: () => previous(),
             onNext: () => next(),
+            viewModeControls: widget.viewMode == .viewerExpanded
+                ? areaStateSelector
+                : null,
           ),
           // Return the equivalent of nothing if the gallery has not loaded yet.
           _ => const SizedBox(),
@@ -85,28 +104,13 @@ class _ContentAreaState extends State<ContentArea> {
           GalleryLoadFailure() => Column(
             crossAxisAlignment: .center,
             children: [
-              TitleTextMedium("Could not load images."),
+              TitleText("Could not load images."),
               BodyText("Error"),
               BodyText("Could not load images."),
             ],
           ),
         };
       },
-    );
-
-    final areaStateSelector = StateSelector(
-      state: _viewMode,
-      changeState: (ContentAreaViewMode newState) => setState(() {
-        _viewMode = newState;
-      }),
-    );
-
-    final filtersAndViewControls = Row(
-      mainAxisAlignment: .spaceBetween,
-      children: [
-        SquareOutlinedIconButton(onPressed: () {}, icon: Icons.tune_rounded),
-        areaStateSelector,
-      ],
     );
 
     return Container(
@@ -123,18 +127,21 @@ class _ContentAreaState extends State<ContentArea> {
       child: Column(
         spacing: DefaultSpacing.large,
         children: [
-          filtersAndViewControls,
+          if (widget.viewMode != .viewerExpanded) filtersAndViewControls,
           Expanded(
             child: Row(
               spacing: DefaultSpacing.small,
               children: [
-                if (_viewMode == .gridExpanded || _viewMode == .splitView) ...[
+                if (widget.viewMode == .gridExpanded ||
+                    widget.viewMode == .splitView) ...[
                   Expanded(child: grid),
                 ],
-                if (_viewMode == .splitView) ...[
+                if (widget.viewMode == .splitView) ...[
                   Expanded(child: splitViewViewer),
                 ],
-                if (_viewMode == .viewerExpanded) ...[Expanded(child: viewer)],
+                if (widget.viewMode == .viewerExpanded) ...[
+                  Expanded(child: viewer),
+                ],
               ],
             ),
           ),
@@ -169,7 +176,7 @@ class _ContentAreaState extends State<ContentArea> {
 
     setState(() {
       primaryTabIndex = index;
-      _viewMode = .splitView;
+      widget.changeViewMode(.splitView);
     });
   }
 
@@ -185,10 +192,10 @@ class _ContentAreaState extends State<ContentArea> {
       context.read<TabCubit>().openTab(content);
     }
 
-    if (_viewMode != ContentAreaViewMode.splitView) {
+    if (widget.viewMode != ContentAreaViewMode.splitView) {
       setState(() {
         primaryTabIndex = index;
-        _viewMode = .splitView;
+        widget.changeViewMode(.splitView);
       });
     }
   }
