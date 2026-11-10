@@ -57,9 +57,8 @@ class _ContentAreaState extends State<ContentArea> {
       },
     );
 
-    final splitViewViewer = Container(
-      decoration: BoxDecoration(borderRadius: .circular(8.0)),
-      padding: .all(8.0),
+    final splitViewViewer = Padding(
+      padding: const EdgeInsets.only(bottom: DefaultSpacing.small),
       child: viewer,
     );
 

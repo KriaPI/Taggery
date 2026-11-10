@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +8,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:taggery/state/tabs.dart';
 import 'package:taggery/ui/components/containers.dart';
+import 'package:taggery/ui/components/misc.dart';
 import 'package:taggery/ui/components/text_variants.dart';
 import 'package:taggery/ui/components/toolbar.dart';
 import 'package:taggery/ui/configuration/default_keybindings.dart';
@@ -26,7 +28,6 @@ const ColorFilter grayscaleFilter = ColorFilter.matrix(<double>[
 ///
 /// The header includes the close button, the tab bar, and the maximize/minimize button. This widget manages
 /// the state of the tabs and shortcuts map.
-///
 class ImageViewerContainer extends StatefulWidget {
   const ImageViewerContainer({
     super.key,
@@ -66,7 +67,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
       child: Focus(
         autofocus: true,
         child: Column(
-          spacing: 4.0,
+          spacing: DefaultSpacing.small,
           children: [
             SizedBox(
               height: 32,
@@ -485,21 +486,27 @@ class _ImageViewerState extends State<ImageViewer> {
                 child: imageControls,
               );
 
-        return Stack(
-          alignment: .bottomCenter,
-          children: [
-            TabBarView(
-              controller: widget.tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: mediaAreas,
-            ),
-            Column(
-              mainAxisSize: .min,
-              children: [
-                Pinnable(isPinned: widget.areControlsPinned, child: controls),
-              ],
-            ),
-          ],
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Stack(
+            alignment: .bottomCenter,
+            children: [
+              TabBarView(
+                controller: widget.tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: mediaAreas,
+              ),
+              Column(
+                mainAxisSize: .min,
+                children: [
+                  Pinnable(isPinned: widget.areControlsPinned, child: controls),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -856,9 +863,8 @@ class _VideoTimelineState extends State<VideoTimeline> {
                         ), // Center horizontally on cursor
                         child: Card(
                           elevation: 0.0,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.inverseSurface.withValues(alpha: 0.2),
+                          color: Theme.of(context).colorScheme.inverseSurface
+                              .withValues(alpha: 0.2),
                           child: Padding(
                             padding: EdgeInsets.symmetric(
                               horizontal: 8.0,
@@ -867,9 +873,9 @@ class _VideoTimelineState extends State<VideoTimeline> {
                             child: Text(
                               formatTimestamp(indicatorValue),
                               style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onInverseSurface,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onInverseSurface,
                               ),
                             ),
                           ),
