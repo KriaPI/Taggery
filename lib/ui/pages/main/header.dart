@@ -21,9 +21,11 @@ class _PageHeaderState extends State<PageHeader> {
     return Row(
       spacing: DefaultSpacing.xs,
       children: [
-        Expanded(child: SizedBox(height: 10, width: .infinity)),
-        TaggerySearchBar(searchController: searchController),
+        // TODO: make search bar right aligned and make the sizedbox disappear when there is little horizontal space. 
+        Expanded(flex: 1, child: SizedBox(height: 10, width: .infinity)),
+        Expanded(flex: 2, child: TaggerySearchBar(searchController: searchController)),
         Expanded(
+          flex: 1,
           child: Row(
             mainAxisAlignment: .spaceBetween,
             children: [
@@ -48,6 +50,7 @@ class _PageHeaderState extends State<PageHeader> {
                       color: onSurfaceVariant,
                     ),
                     style: IconButton.styleFrom(
+                      foregroundColor: onSurfaceVariant,
                       shape: RoundedRectangleBorder(
                         borderRadius: .all(.circular(12.0)),
                       ),
