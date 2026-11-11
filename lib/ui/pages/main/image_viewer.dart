@@ -12,6 +12,7 @@ import 'package:taggery/ui/components/viewer/controls.dart';
 import 'package:taggery/ui/components/viewer/tab_components.dart';
 import 'package:taggery/ui/components/viewer/video_controls.dart';
 import 'package:taggery/ui/components/viewer/viewer_areas.dart';
+import 'package:taggery/ui/configuration/default_keybindings.dart';
 
 /// This widget contains the header for the viewer and the viewer itself as a child.
 ///
@@ -23,6 +24,7 @@ class ImageViewerContainer extends StatefulWidget {
     required this.primaryIndex,
     required this.onPrevious,
     required this.onNext,
+    required this.onClose,
     this.viewModeControls,
   });
 
@@ -30,6 +32,7 @@ class ImageViewerContainer extends StatefulWidget {
   final int primaryIndex;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final VoidCallback onClose;
   final Widget? viewModeControls;
 
   @override
@@ -81,6 +84,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
               tabController: _tabController,
               onPrevious: widget.onPrevious,
               onNext: widget.onNext,
+              onClose: widget.onClose,
               onTogglePinControls: togglePinControls,
               onToggleMonochrome: toggleMonochrome,
               areControlsPinned: _alwaysShowControls,
@@ -166,6 +170,7 @@ class ImageViewer extends StatefulWidget {
     required this.tabController,
     required this.onPrevious,
     required this.onNext,
+    required this.onClose,
     required this.onTogglePinControls,
     required this.onToggleMonochrome,
     required this.areControlsPinned,
@@ -174,6 +179,7 @@ class ImageViewer extends StatefulWidget {
   final TabController tabController;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final VoidCallback onClose;
   final VoidCallback onTogglePinControls;
   final VoidCallback onToggleMonochrome;
   final bool areControlsPinned;
@@ -271,46 +277,64 @@ class _ImageViewerState extends State<ImageViewer> {
 
         final isPrimaryWidget = widget.tabController.index == 0;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Stack(
-            alignment: .bottomCenter,
-            children: [
-              TabBarView(
-                controller: widget.tabController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: mediaAreas,
+        final actions = <Type, Action<Intent>>{
+          if (isPrimaryWidget) PreviousIntent: CallbackAction(onInvoke: (_) => widget.onPrevious()),
+          if (isPrimaryWidget) NextIntent: CallbackAction(onInvoke: (_) => widget.onNext()),
+          CloseIntent: CallbackAction(onInvoke: (_) => widget.onClose()),
+          ToggleMonochromeFilterIntent: CallbackAction(onInvoke: (_) => widget.onToggleMonochrome()),
+          PauseOrResumeIntent: CallbackAction(onInvoke: (_) {
+            player.playOrPause();
+            return;
+          },)
+        };
+
+        return Actions(
+          actions: actions,
+          // TODO: figure out how to cleanly restore focus to this widget.
+          child: Focus(
+            autofocus: true,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(8),
               ),
-              if (isPrimaryWidget)
-                Center(
-                  child: Padding(
-                    padding: .symmetric(horizontal: DefaultSpacing.small),
-                    child: backAndNext,
+              child: Stack(
+                alignment: .bottomCenter,
+                children: [
+                  TabBarView(
+                    controller: widget.tabController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: mediaAreas,
                   ),
-                ),
-              Positioned.fill(
-                child: Padding(
-                  padding: const .all(8.0),
-                  child: Column(
-                    mainAxisAlignment: isCurrentlyVideo
-                        ? .spaceBetween
-                        : .start,
-                    crossAxisAlignment: .start,
-                    children: [
-                      imageControls,
-                      if (isCurrentlyVideo)
-                        Pinnable(
-                          isPinned: widget.areControlsPinned,
-                          child: videoControls,
-                        ),
-                    ],
+                  if (isPrimaryWidget)
+                    Center(
+                      child: Padding(
+                        padding: .symmetric(horizontal: DefaultSpacing.small),
+                        child: backAndNext,
+                      ),
+                    ),
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const .all(8.0),
+                      child: Column(
+                        mainAxisAlignment: isCurrentlyVideo
+                            ? .spaceBetween
+                            : .start,
+                        crossAxisAlignment: .start,
+                        children: [
+                          imageControls,
+                          if (isCurrentlyVideo)
+                            Pinnable(
+                              isPinned: widget.areControlsPinned,
+                              child: videoControls,
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },

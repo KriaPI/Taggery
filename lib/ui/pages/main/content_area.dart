@@ -66,6 +66,7 @@ class _ContentAreaState extends State<ContentArea> {
             primaryIndex: primaryTabIndex,
             onPrevious: () => previous(),
             onNext: () => next(),
+            onClose: () {widget.changeViewMode(.gridExpanded);},
             viewModeControls: widget.viewMode == .viewerExpanded
                 ? areaStateSelector
                 : null,
