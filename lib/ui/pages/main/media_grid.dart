@@ -39,8 +39,6 @@ class _MediaGridState extends State<MediaGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
@@ -79,7 +77,7 @@ class _MediaGridState extends State<MediaGrid> {
           itemCount: widget.gallery.length,
           itemBuilder: (context, index) {
             final GalleryEntry entry = widget.gallery[index];
-            final imageWidth = ((itemWidth) * pixelRatio).ceil();
+            final imageWidth = (itemWidth).ceil();
             final imageHeight = imageWidth;
 
             return !entry.isVideo

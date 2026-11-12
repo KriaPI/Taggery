@@ -51,6 +51,7 @@ class _ImageTileState extends State<ImageTile> {
               height: widget.decodeHeight,
               policy: .fit,
               allowUpscaling: true,
+              useLogicalSize: true
             ),
             fit: .cover,
           );
