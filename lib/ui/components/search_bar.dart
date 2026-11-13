@@ -1,12 +1,19 @@
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:taggery/state/gallery.dart';
 import 'package:taggery/state/search.dart';
 
 class TaggerySearchBar extends StatefulWidget {
-  const TaggerySearchBar({super.key, required this.searchController});
+  const TaggerySearchBar({
+    super.key,
+    required this.searchController,
+    required this.onSearchClosed, required this.searchFocus
+  });
+  final FocusNode searchFocus;
   final SearchController searchController;
+  final VoidCallback onSearchClosed;
 
   @override
   State<TaggerySearchBar> createState() => _TaggerySearchBarState();
@@ -29,23 +36,22 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: 1000,
-        minHeight: 40,
-        maxHeight: 40
-      ),
+      constraints: BoxConstraints(maxWidth: 1000, minHeight: 40, maxHeight: 40),
       child: SearchAnchor(
+        viewOnClose:() {
+          widget.onSearchClosed();
+        },
         searchController: widget.searchController,
         shrinkWrap: true,
         builder: (context, controller) {
           final colorScheme = Theme.of(context).colorScheme;
-      
-          final textStyle = Theme.of(context).textTheme.bodyLarge!.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          );
-      
+
+          final textStyle = Theme.of(context).textTheme.bodyLarge!
+              .copyWith(color: colorScheme.onSurfaceVariant);
+
           return SearchBar(
             textStyle: .all(textStyle),
+            focusNode: widget.searchFocus,
             autoFocus: false,
             controller: controller,
             hintText: "Search in gallery",
@@ -104,7 +110,7 @@ class _TaggerySearchBarState extends State<TaggerySearchBar> {
                     }).toList(),
                   );
                 }
-      
+
                 return const Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Text("Empty"),

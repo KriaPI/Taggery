@@ -28,19 +28,32 @@ class ContentArea extends StatefulWidget {
     super.key,
     required this.viewMode,
     required this.changeViewMode,
+    required this.viewerFocus
   });
   final ContentAreaViewMode viewMode;
   final void Function(ContentAreaViewMode newViewMode) changeViewMode;
+  final FocusNode viewerFocus;
 
   @override
   State<StatefulWidget> createState() => _ContentAreaState();
 }
 
 class _ContentAreaState extends State<ContentArea> {
-  final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image viewer");
+  final GlobalKey _viewerKey = GlobalKey(debugLabel: "Image Viewer");
 
   /// The index of the gallery entry that the primary tab is showing.
   int primaryTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Check if settings are already loaded when this widget mounts.
+    final settingsState = context.read<SettingsCubit>().state;
+    if (settingsState is SettingsLoadSuccess) {
+      context.read<GalleryCubit>().loadDirectory(settingsState.sourceRootPath);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +76,7 @@ class _ContentAreaState extends State<ContentArea> {
         return switch (state) {
           GalleryLoadSuccess() => ImageViewerContainer(
             key: _viewerKey,
+            focusNode: widget.viewerFocus,
             primaryIndex: primaryTabIndex,
             onPrevious: () => previous(),
             onNext: () => next(),
@@ -151,16 +165,7 @@ class _ContentAreaState extends State<ContentArea> {
     );
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    // Check if settings are already loaded when this widget mounts.
-    final settingsState = context.read<SettingsCubit>().state;
-    if (settingsState is SettingsLoadSuccess) {
-      context.read<GalleryCubit>().loadDirectory(settingsState.sourceRootPath);
-    }
-  }
+  
 
   /// Open the image at [index] in the viewer.
   void open(int index) {

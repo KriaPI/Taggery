@@ -13,21 +13,54 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   ContentAreaViewMode _viewMode = .gridExpanded;
+  final searchController = SearchController();
+  late final FocusNode _viewerFocus = FocusNode(debugLabel: "Image Viewer");
+  late final FocusNode _searchFocus = FocusNode(debugLabel: "Search bar");
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocus.addListener(_restoreFocusToImageViewer);
+  }
+
+  @override
+  void dispose() {
+    _viewerFocus.dispose();
+    _searchFocus.dispose();
+    searchController.dispose();
+    super.dispose();
+  }
+
+  // TODO: figure out why this doesn't work.
+  void _restoreFocusToImageViewer() {
+    _searchFocus.unfocus();
+    _viewerFocus.requestFocus();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.only(top: _viewMode == .viewerExpanded ? 0 : DefaultSpacing.large),
+        padding: EdgeInsets.only(
+          top: _viewMode == .viewerExpanded ? 0 : DefaultSpacing.large,
+        ),
         child: Column(
           spacing: DefaultSpacing.large,
           children: [
-            if (_viewMode != .viewerExpanded) Padding(
-              padding: const .symmetric(horizontal: DefaultSpacing.extraLarge),
-              child: PageHeader(),
-            ),
+            if (_viewMode != .viewerExpanded)
+              Padding(
+                padding: const .symmetric(
+                  horizontal: DefaultSpacing.extraLarge,
+                ),
+                child: PageHeader(
+                  searchController: searchController,
+                  onSearchClosed: _restoreFocusToImageViewer,
+                  searchFocus: _searchFocus,
+                ),
+              ),
             Expanded(
               child: ContentArea(
+                viewerFocus: _viewerFocus,
                 viewMode: _viewMode,
                 changeViewMode: (newViewMode) {
                   setState(() {

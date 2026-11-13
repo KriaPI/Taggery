@@ -5,15 +5,16 @@ import 'package:taggery/ui/components/misc.dart';
 import 'package:taggery/ui/components/search_bar.dart';
 
 class PageHeader extends StatefulWidget {
-  const PageHeader({super.key});
+  const PageHeader({super.key, required this.searchController, required this.onSearchClosed, required this.searchFocus});
+  final FocusNode searchFocus;
+  final SearchController searchController;
+  final VoidCallback onSearchClosed;
 
   @override
   State<PageHeader> createState() => _PageHeaderState();
 }
 
 class _PageHeaderState extends State<PageHeader> {
-  final searchController = SearchController();
-
   @override
   Widget build(BuildContext context) {
     final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
@@ -23,7 +24,7 @@ class _PageHeaderState extends State<PageHeader> {
       children: [
         // TODO: make search bar right aligned and make the sizedbox disappear when there is little horizontal space. 
         Expanded(flex: 1, child: SizedBox(height: 10, width: .infinity)),
-        Expanded(flex: 2, child: TaggerySearchBar(searchController: searchController)),
+        Expanded(flex: 2, child: TaggerySearchBar(searchController: widget.searchController, onSearchClosed: widget.onSearchClosed, searchFocus: widget.searchFocus,)),
         Expanded(
           flex: 1,
           child: Row(

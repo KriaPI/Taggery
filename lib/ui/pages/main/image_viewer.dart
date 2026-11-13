@@ -21,6 +21,7 @@ import 'package:taggery/ui/configuration/default_keybindings.dart';
 class ImageViewerContainer extends StatefulWidget {
   const ImageViewerContainer({
     super.key,
+    required this.focusNode,
     required this.primaryIndex,
     required this.onPrevious,
     required this.onNext,
@@ -29,6 +30,7 @@ class ImageViewerContainer extends StatefulWidget {
   });
 
   /// The index of the gallery entry shown in the first tab. This is used to compare in didWidgetUpdate().
+  final FocusNode focusNode;
   final int primaryIndex;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -44,6 +46,36 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
   late TabController _tabController;
   bool _alwaysShowControls = true;
   bool _isMonochrome = false;
+
+  @override
+  void initState() {
+    int tabCount = context.read<TabCubit>().state.length;
+    _tabController = TabController(
+      length: tabCount,
+      vsync: this,
+      animationDuration: Duration.zero,
+    );
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageViewerContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Show the primary tab if the user opens a new image while
+    // having a different tab open.
+    if (oldWidget.primaryIndex != widget.primaryIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _tabController.index = 0;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +113,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
           child: BlocBuilder<TabCubit, List<TabState>>(
             builder: (context, tabs) => ImageViewer(
               key: ValueKey(widget.primaryIndex),
+              focusNode: widget.focusNode,
               tabController: _tabController,
               onPrevious: widget.onPrevious,
               onNext: widget.onNext,
@@ -94,36 +127,6 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
         ),
       ],
     );
-  }
-
-  @override
-  void initState() {
-    int tabCount = context.read<TabCubit>().state.length;
-    _tabController = TabController(
-      length: tabCount,
-      vsync: this,
-      animationDuration: Duration.zero,
-    );
-
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(covariant ImageViewerContainer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Show the primary tab if the user opens a new image while
-    // having a different tab open.
-    if (oldWidget.primaryIndex != widget.primaryIndex) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _tabController.index = 0;
-      });
-    }
   }
 
   /// Get the index of the tab that was opened.
@@ -167,6 +170,7 @@ class ImageViewerContainerState extends State<ImageViewerContainer>
 class ImageViewer extends StatefulWidget {
   const ImageViewer({
     super.key,
+    required this.focusNode,
     required this.tabController,
     required this.onPrevious,
     required this.onNext,
@@ -176,6 +180,7 @@ class ImageViewer extends StatefulWidget {
     required this.areControlsPinned,
     required this.showMonochrome,
   });
+  final FocusNode focusNode;
   final TabController tabController;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -194,6 +199,40 @@ class _ImageViewerState extends State<ImageViewer> {
     configuration: PlayerConfiguration(logLevel: MPVLogLevel.error),
   );
   late final videoController = VideoController(player);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      player.setPlaylistMode(.loop);
+      conditionallyPlayVideo(playImmediately: true);
+    });
+
+    // Listen to tab selection changes to rebuild the toolbar and load videos.
+    widget.tabController.addListener(_handleTabSelection);
+  }
+
+  @override
+  void dispose() {
+    widget.tabController.removeListener(_handleTabSelection);
+    player.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageViewer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Handle tabController replacements when length changes in parent.
+    // We check for equality since the tabController is replaced when the length changes.
+    if (oldWidget.tabController != widget.tabController) {
+      oldWidget.tabController.removeListener(_handleTabSelection);
+      widget.tabController.addListener(_handleTabSelection);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        conditionallyPlayVideo();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +331,7 @@ class _ImageViewerState extends State<ImageViewer> {
           actions: actions,
           // TODO: figure out how to cleanly restore focus to this widget.
           child: Focus(
+            focusNode: widget.focusNode,
             autofocus: true,
             child: Container(
               decoration: BoxDecoration(
@@ -339,40 +379,6 @@ class _ImageViewerState extends State<ImageViewer> {
         );
       },
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      player.setPlaylistMode(.loop);
-      conditionallyPlayVideo(playImmediately: true);
-    });
-
-    // Listen to tab selection changes to rebuild the toolbar and load videos.
-    widget.tabController.addListener(_handleTabSelection);
-  }
-
-  @override
-  void didUpdateWidget(covariant ImageViewer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Handle tabController replacements when length changes in parent.
-    // We check for equality since the tabController is replaced when the length changes.
-    if (oldWidget.tabController != widget.tabController) {
-      oldWidget.tabController.removeListener(_handleTabSelection);
-      widget.tabController.addListener(_handleTabSelection);
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        conditionallyPlayVideo();
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    widget.tabController.removeListener(_handleTabSelection);
-    player.dispose();
-    super.dispose();
   }
 
   /// True if the currently shown tab has a video as its source.
